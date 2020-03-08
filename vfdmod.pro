@@ -5,21 +5,25 @@
 #-------------------------------------------------
 
 QT       += core
-
 QT       -= gui
-
-TARGET = vfdmod
-DEFINES += APP_TARGET=\\\"$$TARGET\\\"
 
 CONFIG   += console
 CONFIG   -= app_bundle
+
+TARGET = vfdmod
 
 TEMPLATE = app
 
 VERSION = 0.1.0
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
-SOURCES += main.cpp
+INCLUDEPATH += /usr/include/linuxcnc
+LIBS += -lmodbus -llinuxcnchal
+
+SOURCES += main.cpp \
+    write-config.cpp \
+    load-config.cpp
 
 HEADERS += \
-    default-values.h
+    default-values.h \
+    structures.h
