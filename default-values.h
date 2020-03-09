@@ -27,4 +27,13 @@
 #define VALUE_MAX_SPEED_RPM     "24000"
 #define VALUE_MIN_SPEED_RPM     "3000"
 
+#define KEY_ADDRESS             "Address"
+#define KEY_DIVIDER             "Divider"
+#define KEY_MULTIPLIER          "Multuplier"
+#define KEY_PIN_TYPE            "PinType"
+#define KEY_PIN_NAME            "PinName"
+
+#define VALUE_DIVIDER           "1"
+#define VALUE_MULTIPLIER        "1"
+
 #endif // DEFAULTVALUES_H

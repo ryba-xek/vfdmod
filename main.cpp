@@ -1,9 +1,6 @@
-/* Required by hal.h */
-#define ULAPI
-
-#include <hal.h>
 #include <getopt.h>
 #include <modbus/modbus-rtu.h>
+#include <QVector>
 #include <QFileInfo>
 #include "structures.h"
 
@@ -23,9 +20,9 @@ typedef struct {
     hal_bit_t *is_connected;
     hal_s32_t *error_count;
     hal_s32_t *last_error;
-} haldata_t;
+} hal_data_t;
 
-int load_config(const QString &fname, connection_t &conn);
+int load_config(const QString &fname, rs485_config_t &rs485_config, QVector<user_parameter_t> &parameters);
 int write_blank_config(const QString &fname);
 
 static void print_help(const QString &fname)
@@ -50,12 +47,12 @@ static void print_help(const QString &fname)
            qPrintable(fname));
 }
 
-static void delay(const connection_t &conn)
+static void delay(rs485_config_t &cfg)
 {
     int startBit = 1;
-    if (conn.parity != "N")
+    if (cfg.parity != "N")
         startBit++;
-    long ns = 1000000 * conn.protocolDelay * (startBit + conn.dataBits + conn.stopBits) / conn.baudRate;
+    long ns = 1000000 * cfg.protocolDelay * (startBit + cfg.dataBits + cfg.stopBits) / cfg.baudRate;
     struct timespec loop_timespec = {0, ns};
     nanosleep(&loop_timespec, NULL);
 }
@@ -63,8 +60,9 @@ static void delay(const connection_t &conn)
 int main(int argc, char *argv[])
 {
     int hal_id;
-    haldata_t *haldata;
-    connection_t connection;
+    hal_data_t *hdata;
+    rs485_config_t rs485_config;
+    QVector<user_parameter_t> parameters;
     int checkFlag = 0;
     int debugFlag = 0;
     int newFlag = 0;
@@ -111,7 +109,7 @@ int main(int argc, char *argv[])
 
     /* If --check flag specified */
     if (checkFlag) {
-        return load_config(iniFile, connection);
+        return load_config(iniFile, rs485_config, parameters);
     }
 
     /* If --new flag specified */
@@ -120,35 +118,83 @@ int main(int argc, char *argv[])
     }
 
     /* Finally, trying to load an existing config */
-    int result = load_config(iniFile, connection);
+    int result = load_config(iniFile, rs485_config, parameters);
     if (result < 0)
         return result;
-
 
     /* HAL init */
     hal_id = hal_init(qPrintable(fname));
     if (hal_id < 0)
         return -1;
 
-    haldata = (haldata_t *)hal_malloc(sizeof(haldata_t));
-    if (!haldata)
+    /* HAL memory allocation for main parameters */
+    hdata = (hal_data_t *)hal_malloc(sizeof(hal_data_t));
+    if (!hdata)
         return -1;
 
-//    int retval;
-//    retval = hal_pin_bit_newf(HAL_OUT, &(haldata->is_connected), hal_id, "%s.modbus-ok", qPrintable(fname));
-//    retval = hal_pin_s32_newf(HAL_OUT, &(haldata->error_count), hal_id, "%s.error-count", qPrintable(fname));
-//    retval = hal_pin_s32_newf(HAL_OUT, &(haldata->last_error), hal_id, "%s.error-code", qPrintable(fname));
+    if (0 != hal_pin_bit_newf(HAL_OUT, &(hdata->is_connected), hal_id, "%s.is-connected", qPrintable(fname)))
+        return -1;
+    if (0 != hal_pin_s32_newf(HAL_OUT, &(hdata->error_count), hal_id, "%s.error-count", qPrintable(fname)))
+        return -1;
+    if (0 != hal_pin_s32_newf(HAL_OUT, &(hdata->last_error), hal_id, "%s.last-error", qPrintable(fname)))
+        return -1;
+
+    hal_data_t *xdata;
+    if (!hdata)
+        return -1;
+
+    xdata = (hal_data_t *)hal_malloc(sizeof(hal_data_t));
+    if (0 != hal_pin_bit_newf(HAL_OUT, &(xdata->is_connected), hal_id, "%s.is-connected-2", qPrintable(fname)))
+        return -1;
+    if (0 != hal_pin_s32_newf(HAL_OUT, &(xdata->error_count), hal_id, "%s.error-count-2", qPrintable(fname)))
+        return -1;
+    if (0 != hal_pin_s32_newf(HAL_OUT, &(xdata->last_error), hal_id, "%s.last-error-2", qPrintable(fname)))
+        return -1;
+
+    /* HAL memory allocation for each user parameter */
+//    for (int i = 0; i < parameters.count(); ++i) {
+//        hal_parameter_t *hparam = parameters[i].pinData;
+//        hparam = (hal_parameter_t *)hal_malloc(sizeof(hal_parameter_t));
+//        if (!hparam)
+//            return -1;
+//    }
+
+//    for (int i = 0; i < parameters.count(); ++i) {
+//        int result;
+//        hal_parameter_t *xparam = parameters[i].pinData;
+
+//        switch (parameters.at(i).pinType) {
+//        case PIN_TYPE_FLOAT:
+//            result = hal_pin_float_newf(HAL_OUT, &(xparam->floatPin), hal_id,
+//                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
+//            break;
+//        case PIN_TYPE_S32:
+//            result = hal_pin_s32_newf(HAL_OUT, &(xparam->s32Pin), hal_id,
+//                                      "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
+//            break;
+//        case PIN_TYPE_U32:
+//            result = hal_pin_u32_newf(HAL_OUT, &(xparam->u32Pin), hal_id,
+//                                      "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
+//            break;
+//        }
+
+//        if (result != 0)
+//            return -1;
+//    }
+
+    printf("***\n");
 
     modbus_t *ctx;
-    ctx = modbus_new_rtu(qPrintable(connection.serialDevice),
-                         connection.baudRate,
-                         connection.parity.at(0).toAscii(),
-                         connection.dataBits,
-                         connection.stopBits);
+    ctx = modbus_new_rtu(qPrintable(rs485_config.serialDevice),
+                         rs485_config.baudRate,
+                         rs485_config.parity.at(0).toAscii(),
+                         rs485_config.dataBits,
+                         rs485_config.stopBits);
     modbus_set_debug(ctx, debugFlag);
     modbus_connect(ctx);
-    modbus_set_slave(ctx, connection.slaveAddress);
-
+    modbus_set_slave(ctx, rs485_config.slaveAddress);
+    uint16_t dd;
+    modbus_read_registers(ctx, 0x1001, 1, &dd);
 
     modbus_close(ctx);
     modbus_free(ctx);
