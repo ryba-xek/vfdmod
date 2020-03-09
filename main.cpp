@@ -1,6 +1,6 @@
 #include <getopt.h>
 #include <modbus/modbus-rtu.h>
-#include <QVector>
+#include <QList>
 #include <QFileInfo>
 #include "structures.h"
 
@@ -22,7 +22,7 @@ typedef struct {
     hal_s32_t *last_error;
 } hal_data_t;
 
-int load_config(const QString &fname, rs485_config_t &rs485_config, QVector<user_parameter_t> &parameters);
+int load_config(const QString &fname, rs485_config_t &rs485_config, QList<user_parameter_t> &parameters);
 int write_blank_config(const QString &fname);
 
 static void print_help(const QString &fname)
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     int hal_id;
     hal_data_t *hdata;
     rs485_config_t rs485_config;
-    QVector<user_parameter_t> parameters;
+    QList<user_parameter_t> parameters;
     int checkFlag = 0;
     int debugFlag = 0;
     int newFlag = 0;
@@ -139,17 +139,21 @@ int main(int argc, char *argv[])
     if (0 != hal_pin_s32_newf(HAL_OUT, &(hdata->last_error), hal_id, "%s.last-error", qPrintable(fname)))
         return -1;
 
-    hal_data_t *xdata;
-    if (!hdata)
-        return -1;
+    hal_parameter_t **hparam;
+    hparam = new hal_parameter_t*[parameters.count()];
 
-    xdata = (hal_data_t *)hal_malloc(sizeof(hal_data_t));
-    if (0 != hal_pin_bit_newf(HAL_OUT, &(xdata->is_connected), hal_id, "%s.is-connected-2", qPrintable(fname)))
-        return -1;
-    if (0 != hal_pin_s32_newf(HAL_OUT, &(xdata->error_count), hal_id, "%s.error-count-2", qPrintable(fname)))
-        return -1;
-    if (0 != hal_pin_s32_newf(HAL_OUT, &(xdata->last_error), hal_id, "%s.last-error-2", qPrintable(fname)))
-        return -1;
+    for (int i = 0; i < parameters.count(); ++i) {
+        hparam[i] = (hal_parameter_t *)hal_malloc(sizeof(hal_parameter_t));
+    }
+    printf("Memory allocated...\n");
+
+    for (int i = 0; i < parameters.count(); ++i) {
+        int result = hal_pin_float_newf(HAL_OUT, &(hparam[i]->floatPin), hal_id,
+                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
+        if (result != 0)
+            return -1;
+    }
+    printf("Pins created...\n");
 
     /* HAL memory allocation for each user parameter */
 //    for (int i = 0; i < parameters.count(); ++i) {
@@ -158,9 +162,10 @@ int main(int argc, char *argv[])
 //        if (!hparam)
 //            return -1;
 //    }
+//    printf("Memory allocated...\n");
 
 //    for (int i = 0; i < parameters.count(); ++i) {
-//        int result;
+//        int result = 0;
 //        hal_parameter_t *xparam = parameters[i].pinData;
 
 //        switch (parameters.at(i).pinType) {
@@ -181,8 +186,7 @@ int main(int argc, char *argv[])
 //        if (result != 0)
 //            return -1;
 //    }
-
-    printf("***\n");
+//    printf("Pins created...\n");
 
     modbus_t *ctx;
     ctx = modbus_new_rtu(qPrintable(rs485_config.serialDevice),

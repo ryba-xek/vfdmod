@@ -103,7 +103,7 @@ fail:
     return -1;
 }
 
-int load_user_group(QSettings &ini, const QString &group, QVector<user_parameter_t> &parameters)
+int load_user_group(QSettings &ini, const QString &group, QList<user_parameter_t> &parameters)
 {
     bool ok;
     QString key, value;
@@ -120,7 +120,10 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_parameter
     if (!ok)
         goto fail;
     else
-        printf("%s\t\t= %d\n", KEY_ADDRESS, uparam.address);
+        printf("%s\t\t= %s (%d)\n",
+               KEY_ADDRESS,
+               qPrintable(QString("0x%1").arg(uparam.address, 4, 16, QChar('0'))),
+               uparam.address);
 
     uparam.multiplier = ini.value(key = KEY_MULTIPLIER, "1").toInt(&ok);
     if (!ok)
@@ -162,7 +165,7 @@ fail:
     return -1;
 }
 
-int load_config(const QString &fname, rs485_config_t &rs485_config, QVector<user_parameter_t> &parameters)
+int load_config(const QString &fname, rs485_config_t &rs485_config, QList<user_parameter_t> &parameters)
 {
     if (!QFile::exists(fname)) {
         printf("File not found: %s\n", qPrintable(fname));
