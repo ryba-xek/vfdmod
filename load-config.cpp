@@ -5,7 +5,7 @@
 #include "structures.h"
 #include <QDebug>
 
-int hex_to_int(QString &s, bool *ok)
+int hex_to_int(QString s, bool *ok)
 {
     int base = 1;
     int result = 0;
@@ -103,7 +103,7 @@ fail:
     return -1;
 }
 
-int load_user_group(QSettings &ini, const QString &group, QList<user_parameter_t> &parameters)
+int load_user_group(QSettings &ini, const QString &group, QVector<user_parameter_t> &parameters)
 {
     bool ok;
     QString key, value;
@@ -165,7 +165,7 @@ fail:
     return -1;
 }
 
-int load_config(const QString &fname, rs485_config_t &rs485_config, QList<user_parameter_t> &parameters)
+int load_config(const QString &fname, rs485_config_t &rs485_config, QVector<user_parameter_t> &parameters)
 {
     if (!QFile::exists(fname)) {
         printf("File not found: %s\n", qPrintable(fname));

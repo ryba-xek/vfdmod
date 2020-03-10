@@ -35,7 +35,6 @@ typedef struct {
     int divider;
     pin_type_t pinType;
     QString pinName;
-    hal_parameter_t *pinData;
 } user_parameter_t;
 
 #endif // STRUCTURES_H
