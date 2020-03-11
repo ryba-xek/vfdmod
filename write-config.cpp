@@ -22,10 +22,10 @@ int write_blank_config(const QString &fname)
     ini.setValue(KEY_PROTOCOL_DELAY, VALUE_PROTOCOL_DELAY);
     ini.endGroup();
 
-    ini.beginGroup(GROUP_SPINDLE_LIMITS);
-    ini.setValue(KEY_MAX_SPEED_RPM,  VALUE_MAX_SPEED_RPM);
-    ini.setValue(KEY_MIN_SPEED_RPM,  VALUE_MIN_SPEED_RPM);
-    ini.endGroup();
+//    ini.beginGroup(GROUP_SPINDLE_LIMITS);
+//    ini.setValue(KEY_MAX_SPEED_RPM,  VALUE_MAX_SPEED_RPM);
+//    ini.setValue(KEY_MIN_SPEED_RPM,  VALUE_MIN_SPEED_RPM);
+//    ini.endGroup();
 
     return 0;
 }

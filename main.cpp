@@ -16,7 +16,7 @@ const struct option long_options[] = {
     {0, 0, 0, 0}
 };
 
-int load_config(const QString &fname, rs485_config_t &rs485_config, QVector<user_parameter_t> &parameters);
+int load_config(const QString &fname, main_config_t &mconfig, QVector<user_config_t> &uconfig);
 int write_blank_config(const QString &fname);
 
 static void print_help(const QString &fname)
@@ -57,10 +57,8 @@ int main(int argc, char *argv[])
     int debugFlag = 0;
     int newFlag = 0;
 
-    int hal_comp_id;
-    hal_data_t *hdata;
-    rs485_config_t rs485_config;
-    QVector<user_parameter_t> parameters;
+    main_config_t mconfig;
+    QVector<user_config_t> uconfig;
     QString iniFile;
     const QString fname = QFileInfo(argv[0]).fileName();
 
@@ -104,7 +102,7 @@ int main(int argc, char *argv[])
 
     /* If --check flag specified */
     if (checkFlag) {
-        return load_config(iniFile, rs485_config, parameters);
+        return load_config(iniFile, mconfig, uconfig);
     }
 
     /* If --new flag specified */
@@ -113,65 +111,68 @@ int main(int argc, char *argv[])
     }
 
     /* Finally, trying to load an existing config */
-    int result = load_config(iniFile, rs485_config, parameters);
+    int result = load_config(iniFile, mconfig, uconfig);
     if (result < 0)
         return result;
 
-    /* HAL init */
-    hal_comp_id = hal_init(qPrintable(fname));
-    if (hal_comp_id < 0)
-        return -1;
+//    int hal_comp_id;
+//    hal_main_data_t *hmdata;
 
-    /* HAL memory allocation for main parameters */
-    hdata = (hal_data_t *)hal_malloc(sizeof(hal_data_t));
-    if (!hdata)
-        return -1;
+//    /* HAL init */
+//    hal_comp_id = hal_init(qPrintable(fname));
+//    if (hal_comp_id < 0)
+//        return -1;
 
-    if (0 != hal_pin_bit_newf(HAL_OUT, &(hdata->is_connected), hal_comp_id, "%s.is-connected", qPrintable(fname)))
-        return -1;
-    if (0 != hal_pin_s32_newf(HAL_OUT, &(hdata->error_count), hal_comp_id, "%s.error-count", qPrintable(fname)))
-        return -1;
-    if (0 != hal_pin_s32_newf(HAL_OUT, &(hdata->last_error), hal_comp_id, "%s.last-error", qPrintable(fname)))
-        return -1;
+//    /* HAL memory allocation for main parameters */
+//    hdata = (hal_data_t *)hal_malloc(sizeof(hal_data_t));
+//    if (!hdata)
+//        return -1;
 
-    hal_parameter_t **hparam;
-    hparam = new hal_parameter_t*[parameters.count()];
+//    if (0 != hal_pin_bit_newf(HAL_OUT, &(hdata->is_connected), hal_comp_id, "%s.is-connected", qPrintable(fname)))
+//        return -1;
+//    if (0 != hal_pin_s32_newf(HAL_OUT, &(hdata->error_count), hal_comp_id, "%s.error-count", qPrintable(fname)))
+//        return -1;
+//    if (0 != hal_pin_s32_newf(HAL_OUT, &(hdata->last_error), hal_comp_id, "%s.last-error", qPrintable(fname)))
+//        return -1;
 
-    for (int i = 0; i < parameters.count(); ++i) {
-        hparam[i] = (hal_parameter_t *)hal_malloc(sizeof(hal_parameter_t));
-    }
-    printf("Memory allocated...\n");
+//    hal_parameter_t **hparam;
+//    hparam = new hal_parameter_t*[parameters.count()];
 
-    for (int i = 0; i < parameters.count(); ++i) {
-        int result = 0;
-        switch (parameters.at(i).pinType) {
-        case PIN_TYPE_FLOAT:
-            result = hal_pin_float_newf(HAL_OUT, &(hparam[i]->floatPin), hal_comp_id,
-                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
-            break;
-        case PIN_TYPE_S32:
-            result = hal_pin_s32_newf(HAL_OUT, &(hparam[i]->s32Pin), hal_comp_id,
-                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
-            break;
-        case PIN_TYPE_U32:
-            result = hal_pin_u32_newf(HAL_OUT, &(hparam[i]->u32Pin), hal_comp_id,
-                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
-            break;
-        }
-        if (result != 0)
-            return -1;
-    }
-    printf("Pins created...\n");
+//    for (int i = 0; i < parameters.count(); ++i) {
+//        hparam[i] = (hal_parameter_t *)hal_malloc(sizeof(hal_parameter_t));
+//    }
+//    printf("Memory allocated...\n");
+
+//    for (int i = 0; i < parameters.count(); ++i) {
+//        int result = 0;
+//        switch (parameters.at(i).pinType) {
+//        case PIN_TYPE_FLOAT:
+//            result = hal_pin_float_newf(HAL_OUT, &(hparam[i]->floatPin), hal_comp_id,
+//                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
+//            break;
+//        case PIN_TYPE_S32:
+//            result = hal_pin_s32_newf(HAL_OUT, &(hparam[i]->s32Pin), hal_comp_id,
+//                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
+//            break;
+//        case PIN_TYPE_U32:
+//            result = hal_pin_u32_newf(HAL_OUT, &(hparam[i]->u32Pin), hal_comp_id,
+//                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
+//            break;
+//        }
+//        if (result != 0)
+//            return -1;
+//    }
+//    printf("Pins created...\n");
 
     modbus_t *ctx;
-    ctx = modbus_new_rtu(qPrintable(rs485_config.serialDevice),
-                         rs485_config.baudRate,
-                         rs485_config.parity.at(0).toAscii(),
-                         rs485_config.dataBits,
-                         rs485_config.stopBits);
+    ctx = modbus_new_rtu(qPrintable(mconfig.rs485.serialDevice),
+                         mconfig.rs485.baudRate,
+                         mconfig.rs485.parity.at(0).toAscii(),
+                         mconfig.rs485.dataBits,
+                         mconfig.rs485.stopBits);
     modbus_set_debug(ctx, debugFlag);
     modbus_connect(ctx);
-    modbus_set_slave(ctx, rs485_config.slaveAddress);
+    modbus_set_slave(ctx, mconfig.rs485.slaveAddress);
     uint16_t dd;
     modbus_read_registers(ctx, 0x1001, 1, &dd);
 

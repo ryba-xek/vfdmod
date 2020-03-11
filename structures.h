@@ -18,50 +18,76 @@ typedef struct {
     int stopBits;
     int loopDelayMs;   // Delay in milliseconds after all user parameters have been read.
     int protocolDelay; // Modbus RTU specification recommends at least 3.5 characters, so minimum value should be 4.
-} ini_rs485_t;
+} rs485_config_t;
 
-/*  */
+/* Control settings */
 typedef struct {
+    int address;
+    int runFwdValue;
+    int runRevValue;
+    int stopValue;
+} ctrl_config_t;
 
-} ini_main_t;
-
-/* User pin type can be float, s32, or u32. */
-enum pin_type_t { PIN_TYPE_FLOAT, PIN_TYPE_S32, PIN_TYPE_U32 };
-
-/* Each user parameter has this structure */
+/* Spindle IN settings */
 typedef struct {
     int address;
     int multiplier;
     int divider;
-    pin_type_t pinType; // see above
+    int maxSpeedRpm;
+    int minSpeedRpm;
+} spindle_in_config_t;
+
+/* Spindle OUT settings */
+typedef struct {
+    int address;
+    int multiplier;
+    int divider;
+    int atSpeedDeviation;
+} spindle_out_config_t;
+
+/* Main INI-file settings */
+typedef struct {
+    QString componentName;
+    rs485_config_t rs485;
+    ctrl_config_t control;
+    spindle_in_config_t rpmIn;
+    spindle_out_config_t rpmOut;
+} main_config_t;
+
+/* User pin type can be float, s32, or u32. */
+enum pin_type_t { PIN_TYPE_FLOAT, PIN_TYPE_S32, PIN_TYPE_U32 };
+
+/* User parameter structure */
+typedef struct {
+    int address;
+    int multiplier;
+    int divider;
+    pin_type_t pinType;
     QString pinName;
-} ini_user_t;
+} user_config_t;
 
 
 /*** HAL STRUCTURES ***/
 
-/* Communication pins */
 typedef struct {
-    hal_bit_t   *is_connected;
-    hal_s32_t   *error_count;
-    hal_s32_t   *last_error;
-} hal_rs485_t;
+    /* Communication pins */
+    hal_bit_t   *isConnected;
+    hal_s32_t   *errorCount;
+    hal_s32_t   *lastError;
 
-/* Spindle control pins */
-typedef struct {
-    hal_bit_t   *run_forward;
-    hal_bit_t   *run_reverse;
-    hal_bit_t   *at_speed;
-    hal_float_t *spindle_rpm_in;
-    hal_float_t *spindle_rpm_out;
-
-} hal_main_t;
+    /* Spindle control pins */
+    hal_bit_t   *runForward;
+    hal_bit_t   *runReverse;
+    hal_bit_t   *atSpeed;
+    hal_float_t *spindleRpmIn;
+    hal_float_t *spindleRpmOut;
+} hal_main_data_t;
 
 /* Three type of data for an each user parameter */
 typedef struct {
     hal_u32_t   *u32Pin;
     hal_s32_t   *s32Pin;
     hal_float_t *floatPin;
-} hal_user_t;
+} hal_user_data_t;
 
 #endif // STRUCTURES_H
