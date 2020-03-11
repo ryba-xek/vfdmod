@@ -16,12 +16,6 @@ const struct option long_options[] = {
     {0, 0, 0, 0}
 };
 
-typedef struct {
-    hal_bit_t *is_connected;
-    hal_s32_t *error_count;
-    hal_s32_t *last_error;
-} hal_data_t;
-
 int load_config(const QString &fname, rs485_config_t &rs485_config, QVector<user_parameter_t> &parameters);
 int write_blank_config(const QString &fname);
 
