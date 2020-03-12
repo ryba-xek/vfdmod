@@ -2,9 +2,13 @@
 #define DEFAULTVALUES_H
 
 /* Config file default values */
+#define GROUP_MAIN              "Main"
 #define GROUP_RS485             "RS485"
 #define GROUP_CONTROL           "Control"
+#define GROUP_SPINDLE_IN        "SpindleRpmIn"
+#define GROUP_SPINDLE_OUT       "SpindleRpmOut"
 
+#define KEY_COMPONENT_NAME      "ComponentName"
 #define KEY_SLAVE_ADDRESS       "SlaveAddress"
 #define KEY_SERIAL_DEVICE       "SerialDevice"
 #define KEY_BAUD_RATE           "BaudRate"
@@ -20,9 +24,12 @@
 #define KEY_MULTIPLIER          "Multiplier"
 #define KEY_PIN_TYPE            "PinType"
 #define KEY_PIN_NAME            "PinName"
-#define KEY_RUN_FWD             "RunFwdValue"
-#define KEY_RUN_REV             "RunRevValue"
+#define KEY_RUN_FWD             "RunForwardValue"
+#define KEY_RUN_REV             "RunReverseValue"
 #define KEY_STOP                "StopValue"
+#define KEY_AT_SPEED_ACCURACY   "AtSpeedAccuracy"
+#define KEY_MAX_SPEED_RPM       "MaxSpeedRPM"
+#define KEY_MIN_SPEED_RPM       "MinSpeedRPM"
 
 #define VALUE_SLAVE_ADDRESS     "1"
 #define VALUE_SERIAL_DEVICE     "/dev/ttyS0"

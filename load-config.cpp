@@ -5,6 +5,10 @@
 #include "structures.h"
 #include <QDebug>
 
+/*
+ * QString::toInt(bool *ok, int base = 10) not available in Qt4,
+ * so I will use my own converter from hex string to integer.
+ */
 int hex_to_int(QString s, bool *ok)
 {
     int base = 1;
@@ -41,7 +45,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     bool ok;
     QString group, key;
 
-    printf("[%s]\n", qPrintable(group = GROUP_RS485));
+    printf("\n[%s]\n", qPrintable(group = GROUP_RS485));
     ini.beginGroup(group);
 
     rs485.slaveAddress = ini.value(key = KEY_SLAVE_ADDRESS, VALUE_SLAVE_ADDRESS).toInt(&ok);
@@ -108,7 +112,7 @@ int load_ctrl_group(QSettings &ini, ctrl_config_t &ctrl)
     bool ok;
     QString group, key, value;
 
-    printf("[%s]\n", qPrintable(group = GROUP_CONTROL));
+    printf("\n[%s]\n", qPrintable(group = GROUP_CONTROL));
     ini.beginGroup(group);
 
     value = ini.value(key = KEY_ADDRESS, "").toString();
@@ -170,12 +174,105 @@ fail:
     return -1;
 }
 
+int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
+{
+    bool ok;
+    QString group, key, value;
+
+    printf("\n[%s]\n", qPrintable(group = GROUP_SPINDLE_IN));
+    ini.beginGroup(group);
+
+    value = ini.value(key = KEY_ADDRESS, "").toString();
+    if (value.toLower().startsWith("0x"))
+        spindle.address = hex_to_int(value, &ok);
+    else
+        spindle.address = value.toInt(&ok);
+    if (!ok)
+        goto fail;
+    else
+        printf("%s\t\t: %s (%d)\n",
+               KEY_ADDRESS,
+               qPrintable(QString("0x%1").arg(spindle.address, 4, 16, QChar('0'))),
+               spindle.address);
+
+    spindle.multiplier = ini.value(key = KEY_MULTIPLIER, "1").toInt(&ok);
+    if (!ok)
+        goto fail;
+    else
+        printf("%s\t: %d\n", KEY_MULTIPLIER, spindle.multiplier);
+
+    spindle.divider = ini.value(key = KEY_DIVIDER, "1").toInt(&ok);
+    if (!ok)
+        goto fail;
+    if (spindle.divider == 0)
+        goto fail;
+    else
+        printf("%s\t\t: %d\n", KEY_DIVIDER, spindle.divider);
+
+
+    ini.endGroup();
+    return 0;
+fail:
+    printf("Invalid parameter in '%s/%s'!\n", qPrintable(group), qPrintable(key));
+    return -1;
+}
+
+int load_rpm_out_group(QSettings &ini, spindle_out_config_t &spindle)
+{
+    bool ok;
+    QString group, key, value;
+
+    printf("\n[%s]\n", qPrintable(group = GROUP_SPINDLE_OUT));
+    ini.beginGroup(group);
+
+    value = ini.value(key = KEY_ADDRESS, "").toString();
+    if (value.toLower().startsWith("0x"))
+        spindle.address = hex_to_int(value, &ok);
+    else
+        spindle.address = value.toInt(&ok);
+    if (!ok)
+        goto fail;
+    else
+        printf("%s\t\t: %s (%d)\n",
+               KEY_ADDRESS,
+               qPrintable(QString("0x%1").arg(spindle.address, 4, 16, QChar('0'))),
+               spindle.address);
+
+    spindle.multiplier = ini.value(key = KEY_MULTIPLIER, "1").toInt(&ok);
+    if (!ok)
+        goto fail;
+    else
+        printf("%s\t: %d\n", KEY_MULTIPLIER, spindle.multiplier);
+
+    spindle.divider = ini.value(key = KEY_DIVIDER, "1").toInt(&ok);
+    if (!ok)
+        goto fail;
+    if (spindle.divider == 0)
+        goto fail;
+    else
+        printf("%s\t\t: %d\n", KEY_DIVIDER, spindle.divider);
+
+    spindle.atSpeedAccuracy = ini.value(key = KEY_AT_SPEED_ACCURACY, "1").toFloat(&ok);
+    if (!ok)
+        goto fail;
+    if ((spindle.atSpeedAccuracy < 0) || (spindle.atSpeedAccuracy > 1.0))
+        goto fail;
+    else
+        printf("%s\t: %f\n", KEY_AT_SPEED_ACCURACY, spindle.atSpeedAccuracy);
+
+    ini.endGroup();
+    return 0;
+fail:
+    printf("Invalid parameter in '%s/%s'!\n", qPrintable(group), qPrintable(key));
+    return -1;
+}
+
 int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t> &uconfig)
 {
     bool ok;
     QString key, value;
     ini.beginGroup(group);
-    printf("[%s]\n", qPrintable(group));
+    printf("\n[%s]\n", qPrintable(group));
 
     user_config_t usrcfg;
 
@@ -246,6 +343,18 @@ int load_config(const QString &fname, main_config_t &mconfig, QVector<user_confi
     /* Saving all group names to the list */
     QStringList groups = ini.childGroups();
 
+    /* Loading main settings */
+    if (groups.contains(GROUP_MAIN)) {
+        ini.beginGroup(GROUP_MAIN);
+        printf("[%s]\n", qPrintable(GROUP_MAIN));
+        mconfig.componentName = ini.value(KEY_COMPONENT_NAME, "vfdmod").toString();
+        if (mconfig.componentName.isEmpty())
+            mconfig.componentName = "vfdmod";
+        printf("%s\t: %s\n", KEY_COMPONENT_NAME, qPrintable(mconfig.componentName));
+        ini.endGroup();
+        groups.removeOne(GROUP_MAIN);
+    }
+
     /* Loading rs485 settings */
     if (!groups.contains(GROUP_RS485)) {
         printf("Group not found: %s\n", GROUP_RS485);
@@ -264,6 +373,26 @@ int load_config(const QString &fname, main_config_t &mconfig, QVector<user_confi
         groups.removeOne(GROUP_CONTROL);
 
     if (load_ctrl_group(ini, mconfig.control) < 0)
+        return -1;
+
+    /* Loading rpm-in settings */
+    if (!groups.contains(GROUP_SPINDLE_IN)) {
+        printf("Group not found: %s\n", GROUP_SPINDLE_IN);
+        return -1;
+    } else
+        groups.removeOne(GROUP_SPINDLE_IN);
+
+    if (load_rpm_in_group(ini, mconfig.rpmIn) < 0)
+        return -1;
+
+    /* Loading rpm-out settings */
+    if (!groups.contains(GROUP_SPINDLE_OUT)) {
+        printf("Group not found: %s\n", GROUP_SPINDLE_OUT);
+        return -1;
+    } else
+        groups.removeOne(GROUP_SPINDLE_OUT);
+
+    if (load_rpm_out_group(ini, mconfig.rpmOut) < 0)
         return -1;
 
     foreach (QString group, groups) {

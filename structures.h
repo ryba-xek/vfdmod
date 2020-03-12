@@ -42,7 +42,7 @@ typedef struct {
     int address;
     int multiplier;
     int divider;
-    int atSpeedDeviation;
+    float atSpeedAccuracy;
 } spindle_out_config_t;
 
 /* Main INI-file settings */
