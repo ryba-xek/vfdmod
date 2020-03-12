@@ -33,7 +33,7 @@
 
 #define VALUE_SLAVE_ADDRESS     "1"
 #define VALUE_SERIAL_DEVICE     "/dev/ttyS0"
-#define VALUE_BAUD_RATE         "9600"
+#define VALUE_BAUD_RATE         "38400"
 #define VALUE_DATA_BITS         "8"
 #define VALUE_PARITY            "N"
 #define VALUE_STOP_BITS         "1"

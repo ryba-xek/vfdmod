@@ -115,54 +115,81 @@ int main(int argc, char *argv[])
     if (result < 0)
         return result;
 
-//    int hal_comp_id;
-//    hal_main_data_t *hmdata;
+    /* HAL init */
+    int hal_comp_id = hal_init(qPrintable(mconfig.componentName));
+    if (hal_comp_id < 0)
+        return -1;
 
-//    /* HAL init */
-//    hal_comp_id = hal_init(qPrintable(fname));
-//    if (hal_comp_id < 0)
-//        return -1;
+    /* HAL memory allocation for main parameters */
+    hal_main_data_t *hal_mdata = NULL;
+    hal_mdata = (hal_main_data_t *)hal_malloc(sizeof(hal_main_data_t));
+    if (!hal_mdata) {
+        hal_exit(hal_comp_id);
+        return -1;
+    }
 
-//    /* HAL memory allocation for main parameters */
-//    hdata = (hal_data_t *)hal_malloc(sizeof(hal_data_t));
-//    if (!hdata)
-//        return -1;
+    /* INCORRECT RETURN HERE!!! */
+    if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->isConnected), hal_comp_id, "%s.rs485.is-connected", qPrintable(mconfig.componentName)))
+        return -1;
+    if (0 != hal_pin_s32_newf(HAL_OUT, &(hal_mdata->errorCount), hal_comp_id, "%s.rs485.error-count", qPrintable(mconfig.componentName)))
+        return -1;
+    if (0 != hal_pin_s32_newf(HAL_OUT, &(hal_mdata->lastError), hal_comp_id, "%s.rs485.last-error", qPrintable(mconfig.componentName)))
+        return -1;
 
-//    if (0 != hal_pin_bit_newf(HAL_OUT, &(hdata->is_connected), hal_comp_id, "%s.is-connected", qPrintable(fname)))
-//        return -1;
-//    if (0 != hal_pin_s32_newf(HAL_OUT, &(hdata->error_count), hal_comp_id, "%s.error-count", qPrintable(fname)))
-//        return -1;
-//    if (0 != hal_pin_s32_newf(HAL_OUT, &(hdata->last_error), hal_comp_id, "%s.last-error", qPrintable(fname)))
-//        return -1;
+    if (0 != hal_pin_float_newf(HAL_IN, &(hal_mdata->spindleRpmIn), hal_comp_id, "%s.spindle.speed-rpm-in", qPrintable(mconfig.componentName)))
+        return -1;
+    if (0 != hal_pin_float_newf(HAL_OUT, &(hal_mdata->spindleRpmOut), hal_comp_id, "%s.spindle.speed-rpm-out", qPrintable(mconfig.componentName)))
+        return -1;
+    if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->atSpeed), hal_comp_id, "%s.spindle.at-speed", qPrintable(mconfig.componentName)))
+        return -1;
 
-//    hal_parameter_t **hparam;
-//    hparam = new hal_parameter_t*[parameters.count()];
+    if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->runForward), hal_comp_id, "%s.spindle.run-forward", qPrintable(mconfig.componentName)))
+        return -1;
+    if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->runReverse), hal_comp_id, "%s.spindle.run-reverse", qPrintable(mconfig.componentName)))
+        return -1;
 
-//    for (int i = 0; i < parameters.count(); ++i) {
-//        hparam[i] = (hal_parameter_t *)hal_malloc(sizeof(hal_parameter_t));
-//    }
-//    printf("Memory allocated...\n");
+    /* HAL memory allocation for user parameters */
+    hal_user_data_t **hal_udata = NULL;
+    hal_udata = new hal_user_data_t*[uconfig.count()];
+    for (int i = 0; i < uconfig.count(); ++i) {
+        hal_udata[i] = (hal_user_data_t *)hal_malloc(sizeof(hal_user_data_t));
+        if (!hal_udata[i])
+            goto fail;
+    }
 
-//    for (int i = 0; i < parameters.count(); ++i) {
-//        int result = 0;
-//        switch (parameters.at(i).pinType) {
-//        case PIN_TYPE_FLOAT:
-//            result = hal_pin_float_newf(HAL_OUT, &(hparam[i]->floatPin), hal_comp_id,
-//                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
-//            break;
-//        case PIN_TYPE_S32:
-//            result = hal_pin_s32_newf(HAL_OUT, &(hparam[i]->s32Pin), hal_comp_id,
-//                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
-//            break;
-//        case PIN_TYPE_U32:
-//            result = hal_pin_u32_newf(HAL_OUT, &(hparam[i]->u32Pin), hal_comp_id,
-//                                        "%s.%s", qPrintable(fname), qPrintable(parameters.at(i).pinName));
-//            break;
-//        }
-//        if (result != 0)
-//            return -1;
-//    }
-//    printf("Pins created...\n");
+    for (int i = 0; i < uconfig.count(); ++i) {
+        //int result = 0;
+        switch (uconfig.at(i).pinType) {
+        case PIN_TYPE_FLOAT:
+            result = hal_pin_float_newf(HAL_OUT, &(hal_udata[i]->floatPin),
+                                        hal_comp_id,
+                                        "%s.parameters.%s",
+                                        qPrintable(mconfig.componentName),
+                                        qPrintable(uconfig.at(i).pinName));
+            *hal_udata[i]->floatPin = 0;
+            break;
+        case PIN_TYPE_S32:
+            result = hal_pin_s32_newf(HAL_OUT, &(hal_udata[i]->s32Pin),
+                                      hal_comp_id,
+                                      "%s.parameters.%s",
+                                      qPrintable(mconfig.componentName),
+                                      qPrintable(uconfig.at(i).pinName));
+            *hal_udata[i]->s32Pin = 0;
+            break;
+        case PIN_TYPE_U32:
+            result = hal_pin_u32_newf(HAL_OUT, &(hal_udata[i]->u32Pin),
+                                      hal_comp_id,
+                                      "%s.parameters.%s",
+                                      qPrintable(mconfig.componentName),
+                                      qPrintable(uconfig.at(i).pinName));
+            *hal_udata[i]->u32Pin = 0;
+            break;
+        }
+        if (result != 0)
+            goto fail;
+    }
+
+    hal_ready(hal_comp_id);
 
     modbus_t *ctx;
     ctx = modbus_new_rtu(qPrintable(mconfig.rs485.serialDevice),
@@ -179,5 +206,11 @@ int main(int argc, char *argv[])
     modbus_close(ctx);
     modbus_free(ctx);
 
+//    hal_exit(hal_comp_id);
+//    delete [] hal_udata;
     return 0;
+fail:
+    hal_exit(hal_comp_id);
+    delete [] hal_udata;
+    return -1;
 }

@@ -195,20 +195,17 @@ int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
                qPrintable(QString("0x%1").arg(spindle.address, 4, 16, QChar('0'))),
                spindle.address);
 
-    spindle.multiplier = ini.value(key = KEY_MULTIPLIER, "1").toInt(&ok);
+    spindle.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);
     if (!ok)
         goto fail;
     else
         printf("%s\t: %d\n", KEY_MULTIPLIER, spindle.multiplier);
 
-    spindle.divider = ini.value(key = KEY_DIVIDER, "1").toInt(&ok);
+    spindle.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
     if (!ok)
-        goto fail;
-    if (spindle.divider == 0)
         goto fail;
     else
         printf("%s\t\t: %d\n", KEY_DIVIDER, spindle.divider);
-
 
     ini.endGroup();
     return 0;
@@ -238,27 +235,25 @@ int load_rpm_out_group(QSettings &ini, spindle_out_config_t &spindle)
                qPrintable(QString("0x%1").arg(spindle.address, 4, 16, QChar('0'))),
                spindle.address);
 
-    spindle.multiplier = ini.value(key = KEY_MULTIPLIER, "1").toInt(&ok);
+    spindle.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);
     if (!ok)
         goto fail;
     else
         printf("%s\t: %d\n", KEY_MULTIPLIER, spindle.multiplier);
 
-    spindle.divider = ini.value(key = KEY_DIVIDER, "1").toInt(&ok);
+    spindle.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
     if (!ok)
-        goto fail;
-    if (spindle.divider == 0)
         goto fail;
     else
         printf("%s\t\t: %d\n", KEY_DIVIDER, spindle.divider);
 
-    spindle.atSpeedAccuracy = ini.value(key = KEY_AT_SPEED_ACCURACY, "1").toFloat(&ok);
+    spindle.atSpeedAccuracy = ini.value(key = KEY_AT_SPEED_ACCURACY, (int)1).toInt(&ok);
     if (!ok)
         goto fail;
-    if ((spindle.atSpeedAccuracy < 0) || (spindle.atSpeedAccuracy > 1.0))
+    if ((spindle.atSpeedAccuracy < 0) || (spindle.atSpeedAccuracy > 100))
         goto fail;
     else
-        printf("%s\t: %f\n", KEY_AT_SPEED_ACCURACY, spindle.atSpeedAccuracy);
+        printf("%s\t: %d\n", KEY_AT_SPEED_ACCURACY, spindle.atSpeedAccuracy);
 
     ini.endGroup();
     return 0;
@@ -289,13 +284,13 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
                qPrintable(QString("0x%1").arg(usrcfg.address, 4, 16, QChar('0'))),
                usrcfg.address);
 
-    usrcfg.multiplier = ini.value(key = KEY_MULTIPLIER, "1").toInt(&ok);
+    usrcfg.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);
     if (!ok)
         goto fail;
     else
         printf("%s\t: %d\n", KEY_MULTIPLIER, usrcfg.multiplier);
 
-    usrcfg.divider = ini.value(key = KEY_DIVIDER, "1").toInt(&ok);
+    usrcfg.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
     if (!ok)
         goto fail;
     if (usrcfg.divider == 0)
@@ -395,6 +390,7 @@ int load_config(const QString &fname, main_config_t &mconfig, QVector<user_confi
     if (load_rpm_out_group(ini, mconfig.rpmOut) < 0)
         return -1;
 
+    /* Loading user settings */
     foreach (QString group, groups) {
         if (load_user_group(ini, group, uconfig) < 0)
             return -1;
