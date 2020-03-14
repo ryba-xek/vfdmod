@@ -11,6 +11,7 @@ CONFIG   += console
 CONFIG   -= app_bundle
 
 TARGET = vfdmod
+DEFINES += APP_TARGET=\\\"$$TARGET\\\"
 
 TEMPLATE = app
 

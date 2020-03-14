@@ -1,10 +1,15 @@
 #include <getopt.h>
+#include <signal.h>
 #include <modbus/modbus-rtu.h>
 #include <QVector>
 #include <QFileInfo>
 #include "structures.h"
 
+const char *github="Sources: https://github.com/aekhv/vfdmod/\n";
 const char *copyright = "2020 (c) Alexander E. (Khabarovsk, Russia)\n";
+
+int checkFlag, debugFlag, exitFlag, newFlag;
+QString exeName;
 
 const char *short_options = "cdhn";
 const struct option long_options[] = {
@@ -16,14 +21,14 @@ const struct option long_options[] = {
     {0, 0, 0, 0}
 };
 
-int load_config(const QString &fname, main_config_t &mconfig, QVector<user_config_t> &uconfig);
-int write_blank_config(const QString &fname);
+int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_config_t> &uconfig);
+int write_blank_config(const QString &inifile);
 
-static void print_help(const QString &fname)
+static void print_help()
 {
     printf("Usage:\n"
            "\t%s [keys] CONFIGFILE\n",
-           qPrintable(fname));
+           qPrintable(exeName));
     printf("Keys:\n"
            "\t-c, --check\tCheck config file for errors.\n"
            "\t-d, --debug\tEnable debug mode.\n"
@@ -36,31 +41,45 @@ static void print_help(const QString &fname)
            "\t%s config.ini\n"
            "\t%s --new config.ini\n"
            "\t%s --check config.ini\n",
-           qPrintable(fname),
-           qPrintable(fname),
-           qPrintable(fname));
+           qPrintable(exeName),
+           qPrintable(exeName),
+           qPrintable(exeName));
 }
 
-static void delay(rs485_config_t &cfg)
+static void protocol_delay(rs485_config_t &cfg)
 {
     int startBit = 1;
     if (cfg.parity != "N")
         startBit++;
-    long ns = 1000000 * cfg.protocolDelay * (startBit + cfg.dataBits + cfg.stopBits) / cfg.baudRate;
+    long ns = 1000000000l * cfg.protocolDelay * (startBit + cfg.dataBits + cfg.stopBits) / cfg.baudRate;
     struct timespec loop_timespec = {0, ns};
     nanosleep(&loop_timespec, NULL);
 }
 
+static void loop_delay(rs485_config_t &cfg)
+{
+    long ns = 1000000l * cfg.loopDelayMs;
+    struct timespec loop_timespec = {0, ns};
+    nanosleep(&loop_timespec, NULL);
+}
+
+static void closeRequest(int param) {
+    Q_UNUSED(param)
+    exitFlag = 1;
+    printf("%s: close request received.\n", qPrintable(exeName));
+}
+
 int main(int argc, char *argv[])
 {
-    int checkFlag = 0;
-    int debugFlag = 0;
-    int newFlag = 0;
-
     main_config_t mconfig;
     QVector<user_config_t> uconfig;
-    QString iniFile;
-    const QString fname = QFileInfo(argv[0]).fileName();
+    QString inifile;
+
+    checkFlag = 0;
+    debugFlag = 0;
+    exitFlag = 0;
+    newFlag = 0;
+    exeName = QFileInfo(argv[0]).fileName();
 
     int arg;
     int index;
@@ -73,45 +92,46 @@ int main(int argc, char *argv[])
             debugFlag = 1;
             break;
         case 'h':
-            print_help(fname);
+            print_help();
             return 0;
         case 'n':
             newFlag = 1;
             break;
         case 'v':
-            printf("%s %s\n", qPrintable(fname), APP_VERSION);
+            printf("%s %s\n", APP_TARGET, APP_VERSION);
+            printf(github);
             printf(copyright);
             return 0;
         default:
-            printf("Arguments are wrong! Type '%s -h' for help.\n", qPrintable(fname));
+            printf("Arguments are wrong! Type '%s -h' for help.\n", qPrintable(exeName));
             return 0;
         }
     }
 
     if ((argc - optind) == 0) {
-        printf("Critical argument is missing! Type '%s -h' for help.\n", qPrintable(fname));
+        printf("Critical argument is missing! Type '%s -h' for help.\n", qPrintable(exeName));
         return 0;
     }
 
     if ((argc - optind) > 1) {
-        printf("Too many arguments! Type '%s -h' for help.\n", qPrintable(fname));
+        printf("Too many arguments! Type '%s -h' for help.\n", qPrintable(exeName));
         return 0;
     }
 
-    iniFile = argv[optind];
+    inifile = argv[optind];
 
     /* If --check flag specified */
     if (checkFlag) {
-        return load_config(iniFile, mconfig, uconfig);
+        return load_config(inifile, mconfig, uconfig);
     }
 
     /* If --new flag specified */
     if (newFlag) {
-        return write_blank_config(iniFile);
+        return write_blank_config(inifile);
     }
 
     /* Finally, trying to load an existing config */
-    int result = load_config(iniFile, mconfig, uconfig);
+    int result = load_config(inifile, mconfig, uconfig);
     if (result < 0)
         return result;
 
@@ -160,7 +180,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < uconfig.count(); ++i) {
         //int result = 0;
         switch (uconfig.at(i).pinType) {
-        case PIN_TYPE_FLOAT:
+        case HAL_FLOAT:
             result = hal_pin_float_newf(HAL_OUT, &(hal_udata[i]->floatPin),
                                         hal_comp_id,
                                         "%s.parameters.%s",
@@ -168,7 +188,7 @@ int main(int argc, char *argv[])
                                         qPrintable(uconfig.at(i).pinName));
             *hal_udata[i]->floatPin = 0;
             break;
-        case PIN_TYPE_S32:
+        case HAL_S32:
             result = hal_pin_s32_newf(HAL_OUT, &(hal_udata[i]->s32Pin),
                                       hal_comp_id,
                                       "%s.parameters.%s",
@@ -176,7 +196,7 @@ int main(int argc, char *argv[])
                                       qPrintable(uconfig.at(i).pinName));
             *hal_udata[i]->s32Pin = 0;
             break;
-        case PIN_TYPE_U32:
+        case HAL_U32:
             result = hal_pin_u32_newf(HAL_OUT, &(hal_udata[i]->u32Pin),
                                       hal_comp_id,
                                       "%s.parameters.%s",
@@ -184,6 +204,9 @@ int main(int argc, char *argv[])
                                       qPrintable(uconfig.at(i).pinName));
             *hal_udata[i]->u32Pin = 0;
             break;
+        default:
+            printf("%s: incorrect HAL pin type!\n", qPrintable(exeName));
+            goto fail;
         }
         if (result != 0)
             goto fail;
@@ -200,17 +223,28 @@ int main(int argc, char *argv[])
     modbus_set_debug(ctx, debugFlag);
     modbus_connect(ctx);
     modbus_set_slave(ctx, mconfig.rs485.slaveAddress);
-    uint16_t dd;
-    modbus_read_registers(ctx, 0x1001, 1, &dd);
+
+    signal(SIGINT, closeRequest);
+    signal(SIGKILL, closeRequest);
+    signal(SIGTERM, closeRequest);
+
+    while (!exitFlag) {
+        uint16_t dd;
+        modbus_read_registers(ctx, 0x1001, 1, &dd);
+
+        loop_delay(mconfig.rs485);
+    }
 
     modbus_close(ctx);
     modbus_free(ctx);
 
-//    hal_exit(hal_comp_id);
-//    delete [] hal_udata;
+    hal_exit(hal_comp_id);
+    delete [] hal_udata;
+    printf("%s: application closed.\n", qPrintable(exeName));
     return 0;
 fail:
     hal_exit(hal_comp_id);
     delete [] hal_udata;
+    printf("%s: critical error.\n", qPrintable(exeName));
     return -1;
 }

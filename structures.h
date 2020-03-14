@@ -20,13 +20,13 @@ typedef struct {
     int protocolDelay; // Modbus RTU specification recommends at least 3.5 characters, so minimum value should be 4.
 } rs485_config_t;
 
-/* Control settings */
+/* Spindle control settings */
 typedef struct {
     int address;
     int runFwdValue;
     int runRevValue;
     int stopValue;
-} ctrl_config_t;
+} control_config_t;
 
 /* Spindle IN settings */
 typedef struct {
@@ -42,27 +42,24 @@ typedef struct {
     int address;
     int multiplier;
     int divider;
-    int atSpeedAccuracy;
+    double atSpeedThreshold;
 } spindle_out_config_t;
 
 /* Main INI-file settings */
 typedef struct {
     QString componentName;
     rs485_config_t rs485;
-    ctrl_config_t control;
+    control_config_t control;
     spindle_in_config_t rpmIn;
     spindle_out_config_t rpmOut;
 } main_config_t;
-
-/* User pin type can be float, s32, or u32. */
-enum pin_type_t { PIN_TYPE_FLOAT, PIN_TYPE_S32, PIN_TYPE_U32 };
 
 /* User parameter structure */
 typedef struct {
     int address;
     int multiplier;
     int divider;
-    pin_type_t pinType;
+    hal_type_t pinType;
     QString pinName;
 } user_config_t;
 
