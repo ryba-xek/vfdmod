@@ -441,6 +441,15 @@ fail_out_of_range:
     return -1;
 }
 
+/* Case insensitive remove method */
+void remove(QStringList &groups, const QString &group)
+{
+    foreach(QString s, groups) {
+        if (s.toLower() == QString(group).toLower())
+            groups.removeOne(s);
+    }
+}
+
 int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_config_t> &uconfig)
 {
     if (!QFile::exists(inifile)) {
@@ -453,53 +462,61 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
     /* Saving all group names to the list */
     QStringList groups = ini.childGroups();
 
+    /* Removing main group from the list */
+    /* Main group is optional, so it's ok if this group does not exists */
+    if (groups.contains(GROUP_MAIN, Qt::CaseInsensitive))
+        remove(groups, GROUP_MAIN);
+
     /* Loading main settings */
     load_main_group(ini, mconfig);
-    if (groups.contains(GROUP_MAIN))
-        groups.removeOne(GROUP_MAIN);
 
-    /* Loading rs485 settings */
-    if (!groups.contains(GROUP_RS485)) {
+    /* Removing rs485 group from the list */
+    if (!groups.contains(GROUP_RS485, Qt::CaseInsensitive)) {
         printf("Group not found: %s\n", GROUP_RS485);
         return -1;
     } else
-        groups.removeOne(GROUP_RS485);
+        remove(groups, GROUP_RS485);
 
+    /* Loading rs485 settings */
     if (load_rs485_group(ini, mconfig.rs485) < 0)
         return -1;
 
-    /* Loading control settings */
-    if (!groups.contains(GROUP_CONTROL)) {
+    /* Removing control group from the list */
+    if (!groups.contains(GROUP_CONTROL, Qt::CaseInsensitive)) {
         printf("Group not found: %s\n", GROUP_CONTROL);
         return -1;
     } else
-        groups.removeOne(GROUP_CONTROL);
+        remove(groups, GROUP_CONTROL);
 
+    /* Loading control settings */
     if (load_ctrl_group(ini, mconfig.control) < 0)
         return -1;
 
-    /* Loading rpm-in settings */
-    if (!groups.contains(GROUP_SPINDLE_IN)) {
+    /* Removing rpm-in group from the list */
+    if (!groups.contains(GROUP_SPINDLE_IN, Qt::CaseInsensitive)) {
         printf("Group not found: %s\n", GROUP_SPINDLE_IN);
         return -1;
     } else
-        groups.removeOne(GROUP_SPINDLE_IN);
+        remove(groups, GROUP_SPINDLE_IN);
 
+    /* Loading rpm-in settings */
     if (load_rpm_in_group(ini, mconfig.rpmIn) < 0)
         return -1;
 
-    /* Loading rpm-out settings */
-    if (!groups.contains(GROUP_SPINDLE_OUT)) {
+    /* Removing rpm-out group from the list */
+    if (!groups.contains(GROUP_SPINDLE_OUT, Qt::CaseInsensitive)) {
         printf("Group not found: %s\n", GROUP_SPINDLE_OUT);
         return -1;
     } else
-        groups.removeOne(GROUP_SPINDLE_OUT);
+        remove(groups, GROUP_SPINDLE_OUT);
 
+    /* Loading rpm-out settings */
     if (load_rpm_out_group(ini, mconfig.rpmOut) < 0)
         return -1;
 
-    /* Loading user settings */
+    /* Now groups variable contains only user group names */
     foreach (QString group, groups) {
+        /* Loading user settings */
         if (load_user_group(ini, group, uconfig) < 0)
             return -1;
     }
