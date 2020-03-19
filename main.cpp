@@ -71,7 +71,7 @@ void closeRequest(int param) {
     printf("%s: close request received.\n", qPrintable(exeName));
 }
 
-int read_parameters(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t> &uconfig)
+int read_registers(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t> &uconfig)
 {
     int result;
     uint16_t value;
@@ -106,6 +106,53 @@ int read_parameters(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t
         if (result != 0)
             goto fail;
     }
+
+    return result;
+fail:
+    printf("(%d) %s\n", errno, modbus_strerror(errno));
+    (*hal_mdata->errorCount)++;
+    *hal_mdata->lastError = errno;
+    return result;
+}
+
+int write_registers(modbus_t *ctx, main_config_t &mconfig)
+{
+    int result;
+    int value = 0;
+
+    /* Command speed */
+    hal_float_t speed = abs(*hal_mdata->spindleRpmIn);
+    if (speed < mconfig.rpmIn.minSpeedRpm)
+        speed = mconfig.rpmIn.minSpeedRpm;
+    if (speed > mconfig.rpmIn.maxSpeedRpm)
+        speed = mconfig.rpmIn.maxSpeedRpm;
+    speed = speed * mconfig.rpmIn.multiplier / mconfig.rpmIn.divider;
+    if (debugFlag)
+        printf("Command speed value: %f\n", speed);
+
+    protocol_delay(mconfig.rs485);
+    result = modbus_write_register(ctx, mconfig.rpmIn.address, int(speed));
+    if (result != 0)
+        goto fail;
+
+    /* Control value */
+    if (0 != *hal_mdata->runReverse)
+        value = mconfig.control.runRevValue;
+    else
+        value = mconfig.control.stopValue;
+
+    if (0 != *hal_mdata->runForward)
+        value = mconfig.control.runFwdValue;
+    else
+        value = mconfig.control.stopValue;
+
+    if (debugFlag)
+        printf("Control value: %d\n", value);
+
+    protocol_delay(mconfig.rs485);
+    result = modbus_write_register(ctx, mconfig.control.address, value);
+    if (result != 0)
+        goto fail;
 
     return result;
 fail:
@@ -290,7 +337,25 @@ int main(int argc, char *argv[])
     signal(SIGTERM, closeRequest);
 
     while (!exitFlag) {
-        read_parameters(ctx, mconfig, uconfig);
+        /* Read & write cycle */
+        write_registers(ctx, mconfig);
+        read_registers(ctx, mconfig, uconfig);
+
+        /* At speed may be valid only when spindle is running */
+        if (((0 != *hal_mdata->runReverse) || (0 != *hal_mdata->runForward)) &&
+                (0 != *hal_mdata->spindleRpmIn)) {
+
+            hal_float_t rpmIn = abs(*hal_mdata->spindleRpmIn);
+            hal_float_t rpmOut = *hal_mdata->spindleRpmOut;
+            if ((abs(rpmOut - rpmIn) / rpmIn) <= mconfig.rpmOut.atSpeedThreshold)
+                *hal_mdata->atSpeed = 1;
+            else
+                *hal_mdata->atSpeed = 0;
+
+        } else
+            *hal_mdata->atSpeed = 0;
+
+        /* Loop delay */
         loop_delay(mconfig.rs485);
     }
 
