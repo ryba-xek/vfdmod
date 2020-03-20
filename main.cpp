@@ -246,10 +246,10 @@ int main(int argc, char *argv[])
                               "%s.rs485.last-error", qPrintable(mconfig.common.componentName)))
         goto fail;
     if (0 != hal_pin_float_newf(HAL_IN, &(hal_mdata->spindleRpmIn), hal_comp_id,
-                                "%s.spindle.speed-rpm-in", qPrintable(mconfig.common.componentName)))
+                                "%s.spindle.rpm-in", qPrintable(mconfig.common.componentName)))
         goto fail;
     if (0 != hal_pin_float_newf(HAL_OUT, &(hal_mdata->spindleRpmOut), hal_comp_id,
-                                "%s.spindle.speed-rpm-out", qPrintable(mconfig.common.componentName)))
+                                "%s.spindle.rpm-out", qPrintable(mconfig.common.componentName)))
         goto fail;
     if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->atSpeed), hal_comp_id,
                               "%s.spindle.at-speed", qPrintable(mconfig.common.componentName)))
@@ -323,10 +323,16 @@ int main(int argc, char *argv[])
                          mconfig.rs485.parity.at(0).toAscii(),
                          mconfig.rs485.dataBits,
                          mconfig.rs485.stopBits);
+    //if (!ctx) goto fail;
     modbus_set_debug(ctx, debugFlag);
     modbus_set_slave(ctx, mconfig.rs485.slaveAddress);
-    modbus_connect(ctx);
-
+    // if (!0) goto fail;
+    //modbus_connect(ctx);
+    if (modbus_connect(ctx) == -1) {
+        fprintf(stderr, "Connection failed: %s\n", modbus_strerror(errno));
+        modbus_free(ctx);
+        return -1;
+    }
     signal(SIGINT, closeRequest);
     signal(SIGKILL, closeRequest);
     signal(SIGTERM, closeRequest);
