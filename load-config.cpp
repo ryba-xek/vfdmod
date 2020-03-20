@@ -43,22 +43,57 @@ int hex_to_int(QString s, bool *ok)
     return result;
 }
 
-int load_main_group(QSettings &ini, main_config_t &mconfig)
+int load_common_group(QSettings &ini, common_config_t &common)
 {
+    bool ok;
+    QString key;
+
+    ini.beginGroup(GROUP_COMMON);
     if (checkFlag)
-        printf("[%s]\n", qPrintable(GROUP_MAIN));
+        printf("[%s]\n", qPrintable(GROUP_COMMON));
 
-    ini.beginGroup(GROUP_MAIN);
-    mconfig.componentName = ini.value(KEY_COMPONENT_NAME, exeName).toString();
-    ini.endGroup();
-
-    if (mconfig.componentName.isEmpty())
-        mconfig.componentName = exeName;
-
+    /* Component name */
+    common.componentName = ini.value(KEY_COMPONENT_NAME, exeName).toString();
+    if (common.componentName.isEmpty())
+        common.componentName = exeName;
     if(checkFlag)
-        printf("%s\t: %s\n", KEY_COMPONENT_NAME, qPrintable(mconfig.componentName));
+        printf("%s\t: %s\n", KEY_COMPONENT_NAME, qPrintable(common.componentName));
 
+    /* Max speed RPM */
+    common.maxSpeedRpm = ini.value(key = KEY_MAX_SPEED_RPM, "").toInt(&ok);
+    if (!ok)
+        goto fail_invalid_parameter;
+    if (common.maxSpeedRpm <= 0)
+        goto fail_out_of_range;
+    if (checkFlag)
+        printf("%s\t: %d\n", KEY_MAX_SPEED_RPM, common.maxSpeedRpm);
+
+    /* Min speed RPM */
+    common.minSpeedRpm = ini.value(key = KEY_MIN_SPEED_RPM, "").toInt(&ok);
+    if (!ok)
+        goto fail_invalid_parameter;
+    if (common.minSpeedRpm <= 0)
+        goto fail_out_of_range;
+    if (checkFlag)
+        printf("%s\t: %d\n", KEY_MIN_SPEED_RPM, common.minSpeedRpm);
+
+    /* At speed threshold */
+    common.atSpeedThreshold = ini.value(key = KEY_AT_SPEED_THRESHOLD, VALUE_AT_SPEED_THRESHOLD).toDouble(&ok);
+    if (!ok)
+        goto fail_invalid_parameter;
+    if ((common.atSpeedThreshold < 0) || (common.atSpeedThreshold > 1.0))
+        goto fail_out_of_range;
+    if (checkFlag)
+        printf("%s: %f\n", KEY_AT_SPEED_THRESHOLD, common.atSpeedThreshold);
+
+    ini.endGroup();
     return 0;
+fail_invalid_parameter:
+    printf("%s/%s: parameter is wrong or missing!\n", GROUP_RS485, qPrintable(key));
+    return -1;
+fail_out_of_range:
+    printf("%s/%s: parameter is out of range!\n", GROUP_RS485, qPrintable(key));
+    return -1;
 }
 
 int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
@@ -124,16 +159,16 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     if (checkFlag)
         printf("%s\t: %d\n", KEY_STOP_BITS, rs485.stopBits);
 
-    /* Loop delay in milliseconds */
-    rs485.loopDelayMs = ini.value(key = KEY_LOOP_DELAY_MS, VALUE_LOOP_DELAY_MS).toInt(&ok);
+    /* Loop delay */
+    rs485.loopDelay = ini.value(key = KEY_LOOP_DELAY, VALUE_LOOP_DELAY).toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
-    if (rs485.loopDelayMs < 0)
+    if (rs485.loopDelay < 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_LOOP_DELAY_MS, rs485.loopDelayMs);
+        printf("%s\t: %d\n", KEY_LOOP_DELAY, rs485.loopDelay);
 
-    /* Protocol delay in characters */
+    /* Protocol delay */
     rs485.protocolDelay = ini.value(key = KEY_PROTOCOL_DELAY, VALUE_PROTOCOL_DELAY).toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
@@ -141,6 +176,15 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
         goto fail_out_of_range;
     if (checkFlag)
         printf("%s\t: %d\n", KEY_PROTOCOL_DELAY, rs485.protocolDelay);
+
+    /* Is connected delay */
+    rs485.isConnectedDelay = ini.value(key = KEY_IS_CONNECTED_DELAY, VALUE_IS_CONNECTED_DELAY).toInt(&ok);
+    if (!ok)
+        goto fail_invalid_parameter;
+    if (rs485.isConnectedDelay < 0)
+        goto fail_out_of_range;
+    if (checkFlag)
+        printf("%s: %d\n", KEY_IS_CONNECTED_DELAY, rs485.isConnectedDelay);
 
     ini.endGroup();
     return 0;
@@ -273,24 +317,6 @@ int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_DIVIDER, spindle.divider);
 
-    /* Max speed RPM */
-    spindle.maxSpeedRpm = ini.value(key = KEY_MAX_SPEED_RPM, "").toInt(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if (spindle.maxSpeedRpm <= 0)
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t: %d\n", KEY_MAX_SPEED_RPM, spindle.maxSpeedRpm);
-
-    /* Min speed RPM */
-    spindle.minSpeedRpm = ini.value(key = KEY_MIN_SPEED_RPM, "").toInt(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if (spindle.minSpeedRpm <= 0)
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t: %d\n", KEY_MIN_SPEED_RPM, spindle.minSpeedRpm);
-
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
@@ -342,15 +368,6 @@ int load_rpm_out_group(QSettings &ini, spindle_out_config_t &spindle)
         goto fail_out_of_range;
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_DIVIDER, spindle.divider);
-
-    /* At speed threshold */
-    spindle.atSpeedThreshold = ini.value(key = KEY_AT_SPEED_THRESHOLD, VALUE_AT_SPEED_THRESHOLD).toDouble(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if ((spindle.atSpeedThreshold < 0) || (spindle.atSpeedThreshold > 1.0))
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s: %f\n", KEY_AT_SPEED_THRESHOLD, spindle.atSpeedThreshold);
 
     ini.endGroup();
     return 0;
@@ -462,13 +479,15 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
     /* Saving all group names to the list */
     QStringList groups = ini.childGroups();
 
-    /* Removing main group from the list */
-    /* Main group is optional, so it's ok if this group does not exists */
-    if (groups.contains(GROUP_MAIN, Qt::CaseInsensitive))
-        remove(groups, GROUP_MAIN);
+    /* Removing common group from the list */
+    if (!groups.contains(GROUP_COMMON, Qt::CaseInsensitive)) {
+        printf("Group not found: %s\n", GROUP_COMMON);
+        return -1;
+    } else
+        remove(groups, GROUP_COMMON);
 
-    /* Loading main settings */
-    load_main_group(ini, mconfig);
+    /* Loading common settings */
+    load_common_group(ini, mconfig.common);
 
     /* Removing rs485 group from the list */
     if (!groups.contains(GROUP_RS485, Qt::CaseInsensitive)) {

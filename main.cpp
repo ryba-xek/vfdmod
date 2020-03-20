@@ -12,6 +12,7 @@ int checkFlag, debugFlag, exitFlag, newFlag;
 QString exeName;
 hal_main_data_t *hal_mdata;
 hal_user_data_t **hal_udata;
+int okCounter;
 
 const char *short_options = "cdhn";
 const struct option long_options[] = {
@@ -60,7 +61,7 @@ void protocol_delay(const rs485_config_t &cfg)
 
 void loop_delay(const rs485_config_t &cfg)
 {
-    long ns = 1000000l * cfg.loopDelayMs;
+    long ns = 1000000l * cfg.loopDelay;
     struct timespec loop_timespec = {0, ns};
     nanosleep(&loop_timespec, NULL);
 }
@@ -73,22 +74,21 @@ void closeRequest(int param) {
 
 int read_registers(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t> &uconfig)
 {
-    int result;
-    uint16_t value;
+    uint16_t value = 0;
 
     /* Reading spindle output speed */
     protocol_delay(mconfig.rs485);
-    result = modbus_read_registers(ctx, mconfig.rpmOut.address, 1, &value);
-    if (result < 0)
+    if (1 != modbus_read_registers(ctx, mconfig.rpmOut.address, 1, &value))
         goto fail;
+    okCounter++;
     *hal_mdata->spindleRpmOut = value * mconfig.rpmOut.multiplier / mconfig.rpmOut.divider;
 
     /* Reading user parameters */
     for (int i = 0; i < uconfig.count(); ++i) {
         protocol_delay(mconfig.rs485);
-        result = modbus_read_registers(ctx, uconfig.at(i).address, 1, &value);
-        if (result < 0)
+        if (1 != modbus_read_registers(ctx, uconfig.at(i).address, 1, &value))
             goto fail;
+
         switch (uconfig.at(i).pinType) {
         case HAL_FLOAT:
             *hal_udata[i]->floatPin = value * uconfig.at(i).multiplier / uconfig.at(i).divider;
@@ -101,38 +101,36 @@ int read_registers(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t>
             break;
         default:
             printf("%s: incorrect HAL pin type!\n", qPrintable(exeName));
-            goto fail;
         }
-        if (result != 0)
-            goto fail;
+
+        okCounter++;
     }
 
-    return result;
+    return 0;
 fail:
-    printf("(%d) %s\n", errno, modbus_strerror(errno));
-    (*hal_mdata->errorCount)++;
     *hal_mdata->lastError = errno;
-    return result;
+    (*hal_mdata->errorCount)++;
+    okCounter = 0;
+    return -1;
 }
 
 int write_registers(modbus_t *ctx, main_config_t &mconfig)
 {
-    int result;
+    //int result;
     int value = 0;
 
     /* Command speed */
     hal_float_t speed = abs(*hal_mdata->spindleRpmIn);
-    if (speed < mconfig.rpmIn.minSpeedRpm)
-        speed = mconfig.rpmIn.minSpeedRpm;
-    if (speed > mconfig.rpmIn.maxSpeedRpm)
-        speed = mconfig.rpmIn.maxSpeedRpm;
+    if (speed < mconfig.common.minSpeedRpm)
+        speed = mconfig.common.minSpeedRpm;
+    if (speed > mconfig.common.maxSpeedRpm)
+        speed = mconfig.common.maxSpeedRpm;
     speed = speed * mconfig.rpmIn.multiplier / mconfig.rpmIn.divider;
     if (debugFlag)
         printf("Command speed value: %f\n", speed);
 
     protocol_delay(mconfig.rs485);
-    result = modbus_write_register(ctx, mconfig.rpmIn.address, int(speed));
-    if (result != 0)
+    if (1 != modbus_write_register(ctx, mconfig.rpmIn.address, int(speed)))
         goto fail;
 
     /* Control value */
@@ -150,16 +148,15 @@ int write_registers(modbus_t *ctx, main_config_t &mconfig)
         printf("Control value: %d\n", value);
 
     protocol_delay(mconfig.rs485);
-    result = modbus_write_register(ctx, mconfig.control.address, value);
-    if (result != 0)
+    if (1 != modbus_write_register(ctx, mconfig.control.address, value))
         goto fail;
 
-    return result;
+    return 0;
 fail:
-    printf("(%d) %s\n", errno, modbus_strerror(errno));
-    (*hal_mdata->errorCount)++;
     *hal_mdata->lastError = errno;
-    return result;
+    (*hal_mdata->errorCount)++;
+    okCounter = 0;
+    return -1;
 }
 
 int main(int argc, char *argv[])
@@ -172,6 +169,7 @@ int main(int argc, char *argv[])
     debugFlag = 0;
     exitFlag = 0;
     newFlag = 0;
+    okCounter = 0;
     exeName = QFileInfo(argv[0]).fileName();
 
     int arg;
@@ -229,7 +227,7 @@ int main(int argc, char *argv[])
         return result;
 
     /* HAL init */
-    int hal_comp_id = hal_init(qPrintable(mconfig.componentName));
+    int hal_comp_id = hal_init(qPrintable(mconfig.common.componentName));
     if (hal_comp_id < 0)
         return -1;
 
@@ -239,28 +237,28 @@ int main(int argc, char *argv[])
         goto fail;
 
     if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->isConnected), hal_comp_id,
-                          "%s.rs485.is-connected", qPrintable(mconfig.componentName)))
+                          "%s.rs485.is-connected", qPrintable(mconfig.common.componentName)))
         goto fail;
     if (0 != hal_pin_s32_newf(HAL_OUT, &(hal_mdata->errorCount), hal_comp_id,
-                          "%s.rs485.error-count", qPrintable(mconfig.componentName)))
+                          "%s.rs485.error-count", qPrintable(mconfig.common.componentName)))
         goto fail;
     if (0 != hal_pin_s32_newf(HAL_OUT, &(hal_mdata->lastError), hal_comp_id,
-                              "%s.rs485.last-error", qPrintable(mconfig.componentName)))
+                              "%s.rs485.last-error", qPrintable(mconfig.common.componentName)))
         goto fail;
     if (0 != hal_pin_float_newf(HAL_IN, &(hal_mdata->spindleRpmIn), hal_comp_id,
-                                "%s.spindle.speed-rpm-in", qPrintable(mconfig.componentName)))
+                                "%s.spindle.speed-rpm-in", qPrintable(mconfig.common.componentName)))
         goto fail;
     if (0 != hal_pin_float_newf(HAL_OUT, &(hal_mdata->spindleRpmOut), hal_comp_id,
-                                "%s.spindle.speed-rpm-out", qPrintable(mconfig.componentName)))
+                                "%s.spindle.speed-rpm-out", qPrintable(mconfig.common.componentName)))
         goto fail;
     if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->atSpeed), hal_comp_id,
-                              "%s.spindle.at-speed", qPrintable(mconfig.componentName)))
+                              "%s.spindle.at-speed", qPrintable(mconfig.common.componentName)))
         goto fail;
     if (0 != hal_pin_bit_newf(HAL_IN, &(hal_mdata->runForward), hal_comp_id,
-                              "%s.spindle.run-forward", qPrintable(mconfig.componentName)))
+                              "%s.spindle.run-forward", qPrintable(mconfig.common.componentName)))
         goto fail;
     if (0 != hal_pin_bit_newf(HAL_IN, &(hal_mdata->runReverse), hal_comp_id,
-                              "%s.spindle.run-reverse", qPrintable(mconfig.componentName)))
+                              "%s.spindle.run-reverse", qPrintable(mconfig.common.componentName)))
         goto fail;
 
     *hal_mdata->isConnected = 0;
@@ -286,7 +284,7 @@ int main(int argc, char *argv[])
             if (0 == hal_pin_float_newf(HAL_OUT, &(hal_udata[i]->floatPin),
                                         hal_comp_id,
                                         "%s.parameters.%s",
-                                        qPrintable(mconfig.componentName),
+                                        qPrintable(mconfig.common.componentName),
                                         qPrintable(uconfig.at(i).pinName)))
                 *hal_udata[i]->floatPin = 0;
             else
@@ -296,7 +294,7 @@ int main(int argc, char *argv[])
             if (0 == hal_pin_s32_newf(HAL_OUT, &(hal_udata[i]->s32Pin),
                                       hal_comp_id,
                                       "%s.parameters.%s",
-                                      qPrintable(mconfig.componentName),
+                                      qPrintable(mconfig.common.componentName),
                                       qPrintable(uconfig.at(i).pinName)))
                 *hal_udata[i]->s32Pin = 0;
             else
@@ -306,7 +304,7 @@ int main(int argc, char *argv[])
             if (0 == hal_pin_u32_newf(HAL_OUT, &(hal_udata[i]->u32Pin),
                                       hal_comp_id,
                                       "%s.parameters.%s",
-                                      qPrintable(mconfig.componentName),
+                                      qPrintable(mconfig.common.componentName),
                                       qPrintable(uconfig.at(i).pinName)))
                 *hal_udata[i]->u32Pin = 0;
             else
@@ -314,10 +312,7 @@ int main(int argc, char *argv[])
             break;
         default:
             printf("%s: incorrect HAL pin type!\n", qPrintable(exeName));
-            goto fail;
         }
-        if (result != 0)
-            goto fail;
     }
 
     hal_ready(hal_comp_id);
@@ -347,13 +342,38 @@ int main(int argc, char *argv[])
 
             hal_float_t rpmIn = abs(*hal_mdata->spindleRpmIn);
             hal_float_t rpmOut = *hal_mdata->spindleRpmOut;
-            if ((abs(rpmOut - rpmIn) / rpmIn) <= mconfig.rpmOut.atSpeedThreshold)
+            if ((abs(rpmOut - rpmIn) / rpmIn) <= mconfig.common.atSpeedThreshold)
                 *hal_mdata->atSpeed = 1;
             else
                 *hal_mdata->atSpeed = 0;
 
         } else
             *hal_mdata->atSpeed = 0;
+
+        /* Is Modbus connection established? */
+        if (okCounter > mconfig.rs485.isConnectedDelay) {
+            *hal_mdata->isConnected = 1;
+            okCounter = mconfig.rs485.isConnectedDelay;
+        } else {
+            *hal_mdata->isConnected = 0;
+            *hal_mdata->spindleRpmOut = 0;
+            *hal_mdata->atSpeed = 0;
+            for (int i = 0; i < uconfig.count(); ++i) {
+                switch (uconfig.at(i).pinType) {
+                case HAL_FLOAT:
+                    *hal_udata[i]->floatPin = 0;
+                    break;
+                case HAL_S32:
+                    *hal_udata[i]->s32Pin = 0;
+                    break;
+                case HAL_U32:
+                    *hal_udata[i]->u32Pin = 0;
+                    break;
+                default:
+                    printf("%s: incorrect HAL pin type!\n", qPrintable(exeName));
+                }
+            }
+        }
 
         /* Loop delay */
         loop_delay(mconfig.rs485);

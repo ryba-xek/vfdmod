@@ -8,6 +8,14 @@
 
 /*** INI STRUCTURES ***/
 
+/* Common settings */
+typedef struct {
+    QString componentName;
+    int maxSpeedRpm;
+    int minSpeedRpm;
+    double atSpeedThreshold;
+} common_config_t;
+
 /* Communication settings */
 typedef struct {
     int slaveAddress;
@@ -16,8 +24,13 @@ typedef struct {
     int dataBits;
     QString parity;
     int stopBits;
-    int loopDelayMs;   // Delay in milliseconds after all user parameters have been read.
-    int protocolDelay; // Modbus RTU specification recommends at least 3.5 characters, so minimum value should be 4.
+    // Delay in milliseconds after all user parameters have been transferred, 100...200 ms should be fine.
+    int loopDelay;
+    // Delay in characters at beginning of every Modbus request.
+    // Modbus RTU specification recommends at least 3.5 characters, so minimum value must be 4.
+    int protocolDelay;
+    // How many successfull Modbus requests should be completed to set HAL isConnected pin.
+    int isConnectedDelay;
 } rs485_config_t;
 
 /* Spindle control settings */
@@ -33,8 +46,6 @@ typedef struct {
     int address;
     int multiplier;
     int divider;
-    int maxSpeedRpm;
-    int minSpeedRpm;
 } spindle_in_config_t;
 
 /* Spindle OUT settings */
@@ -42,12 +53,11 @@ typedef struct {
     int address;
     int multiplier;
     int divider;
-    double atSpeedThreshold;
 } spindle_out_config_t;
 
 /* Main INI-file settings */
 typedef struct {
-    QString componentName;
+    common_config_t common;
     rs485_config_t rs485;
     control_config_t control;
     spindle_in_config_t rpmIn;
