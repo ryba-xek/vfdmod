@@ -74,14 +74,14 @@ void closeRequest(int param) {
 
 int read_registers(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t> &uconfig)
 {
-    uint16_t value = 0;
+    uint16_t value;
 
     /* Reading spindle output speed */
     protocol_delay(mconfig.rs485);
     if (1 != modbus_read_registers(ctx, mconfig.rpmOut.address, 1, &value))
         goto fail;
     okCounter++;
-    *hal_mdata->spindleRpmOut = value * mconfig.rpmOut.multiplier / mconfig.rpmOut.divider;
+    *hal_mdata->spindleRpmOut = double(value) * mconfig.rpmOut.multiplier / mconfig.rpmOut.divider;
 
     /* Reading user parameters */
     for (int i = 0; i < uconfig.count(); ++i) {
@@ -116,36 +116,37 @@ fail:
 
 int write_registers(modbus_t *ctx, main_config_t &mconfig)
 {
-    //int result;
-    int value = 0;
+    int value;
 
     /* Command speed */
     hal_float_t speed = abs(*hal_mdata->spindleRpmIn);
+
     if (speed < mconfig.common.minSpeedRpm)
         speed = mconfig.common.minSpeedRpm;
+
     if (speed > mconfig.common.maxSpeedRpm)
         speed = mconfig.common.maxSpeedRpm;
+
     speed = speed * mconfig.rpmIn.multiplier / mconfig.rpmIn.divider;
+
     if (debugFlag)
-        printf("Command speed value: %f\n", speed);
+        printf("%s: command speed value >>> %f\n", qPrintable(exeName), speed);
 
     protocol_delay(mconfig.rs485);
     if (1 != modbus_write_register(ctx, mconfig.rpmIn.address, int(speed)))
         goto fail;
 
     /* Control value */
+    value = mconfig.control.stopValue;
+
     if (0 != *hal_mdata->runReverse)
         value = mconfig.control.runRevValue;
-    else
-        value = mconfig.control.stopValue;
 
     if (0 != *hal_mdata->runForward)
         value = mconfig.control.runFwdValue;
-    else
-        value = mconfig.control.stopValue;
 
     if (debugFlag)
-        printf("Control value: %d\n", value);
+        printf("%s: control value >>> %d\n", qPrintable(exeName), value);
 
     protocol_delay(mconfig.rs485);
     if (1 != modbus_write_register(ctx, mconfig.control.address, value))
@@ -222,9 +223,8 @@ int main(int argc, char *argv[])
     }
 
     /* Finally, trying to load an existing config */
-    int result = load_config(inifile, mconfig, uconfig);
-    if (result < 0)
-        return result;
+    if (load_config(inifile, mconfig, uconfig) < 0)
+        return -1;
 
     /* HAL init */
     int hal_comp_id = hal_init(qPrintable(mconfig.common.componentName));
@@ -315,30 +315,35 @@ int main(int argc, char *argv[])
         }
     }
 
-    hal_ready(hal_comp_id);
-
+    /* Modbus init */
     modbus_t *ctx;
     ctx = modbus_new_rtu(qPrintable(mconfig.rs485.serialDevice),
                          mconfig.rs485.baudRate,
                          mconfig.rs485.parity.at(0).toAscii(),
                          mconfig.rs485.dataBits,
                          mconfig.rs485.stopBits);
-    //if (!ctx) goto fail;
+    if (!ctx)
+        goto fail;
+
     modbus_set_debug(ctx, debugFlag);
     modbus_set_slave(ctx, mconfig.rs485.slaveAddress);
-    // if (!0) goto fail;
-    //modbus_connect(ctx);
+
     if (modbus_connect(ctx) == -1) {
-        fprintf(stderr, "Connection failed: %s\n", modbus_strerror(errno));
+        printf("%s: %s\n", qPrintable(exeName), modbus_strerror(errno));
         modbus_free(ctx);
-        return -1;
+        goto fail;
     }
+
     signal(SIGINT, closeRequest);
     signal(SIGKILL, closeRequest);
     signal(SIGTERM, closeRequest);
 
+    /* Now HAL component is ready */
+    hal_ready(hal_comp_id);
+
+    /* MAIN LOOP */
     while (!exitFlag) {
-        /* Read & write cycle */
+        /* Writing data & receiving data */
         write_registers(ctx, mconfig);
         read_registers(ctx, mconfig, uconfig);
 
@@ -362,6 +367,8 @@ int main(int argc, char *argv[])
             okCounter = mconfig.rs485.isConnectedDelay;
         } else {
             *hal_mdata->isConnected = 0;
+            /* If connection lost then also need to clear HAL output data */
+            /* Is this really necessary? I'm doubt... */
             *hal_mdata->spindleRpmOut = 0;
             *hal_mdata->atSpeed = 0;
             for (int i = 0; i < uconfig.count(); ++i) {
@@ -392,6 +399,7 @@ int main(int argc, char *argv[])
     delete [] hal_udata;
     printf("%s: application closed.\n", qPrintable(exeName));
     return 0;
+
 fail:
     hal_exit(hal_comp_id);
     delete [] hal_udata;

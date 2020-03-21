@@ -540,5 +540,7 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
             return -1;
     }
 
+    if (checkFlag)
+        printf("--- Config file is OK ---\n");
     return 0;
 }
