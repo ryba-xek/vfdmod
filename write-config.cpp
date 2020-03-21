@@ -26,7 +26,6 @@ int write_blank_config(const QString &fname)
     ini.setValue(KEY_STOP_BITS,         VALUE_STOP_BITS);
     ini.setValue(KEY_LOOP_DELAY,        VALUE_LOOP_DELAY);
     ini.setValue(KEY_PROTOCOL_DELAY,    VALUE_PROTOCOL_DELAY);
-    ini.setValue(KEY_IS_CONNECTED_DELAY,VALUE_IS_CONNECTED_DELAY);
     ini.endGroup();
 
     ini.beginGroup(GROUP_CONTROL);

@@ -54,15 +54,16 @@ void protocol_delay(const rs485_config_t &cfg)
     int startBit = 1;
     if (cfg.parity != "N")
         startBit++;
-    long ns = 1000000000l * cfg.protocolDelay * (startBit + cfg.dataBits + cfg.stopBits) / cfg.baudRate;
+    long ns = (1000000000l  / cfg.baudRate) * cfg.protocolDelay * (startBit + cfg.dataBits + cfg.stopBits);
     struct timespec loop_timespec = {0, ns};
     nanosleep(&loop_timespec, NULL);
 }
 
 void loop_delay(const rs485_config_t &cfg)
 {
-    long ns = 1000000l * cfg.loopDelay;
-    struct timespec loop_timespec = {0, ns};
+    long s = cfg.loopDelay / 1000;
+    long ns = (cfg.loopDelay % 1000) * 1000000l;
+    struct timespec loop_timespec = {s, ns};
     nanosleep(&loop_timespec, NULL);
 }
 

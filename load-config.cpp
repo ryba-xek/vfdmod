@@ -163,7 +163,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     rs485.loopDelay = ini.value(key = KEY_LOOP_DELAY, VALUE_LOOP_DELAY).toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
-    if (rs485.loopDelay < 0)
+    if ((rs485.loopDelay < 0) || (rs485.loopDelay > 2000))
         goto fail_out_of_range;
     if (checkFlag)
         printf("%s\t: %d\n", KEY_LOOP_DELAY, rs485.loopDelay);
@@ -172,7 +172,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     rs485.protocolDelay = ini.value(key = KEY_PROTOCOL_DELAY, VALUE_PROTOCOL_DELAY).toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
-    if (rs485.protocolDelay < 0)
+    if ((rs485.protocolDelay < 4) || (rs485.protocolDelay > 100))
         goto fail_out_of_range;
     if (checkFlag)
         printf("%s\t: %d\n", KEY_PROTOCOL_DELAY, rs485.protocolDelay);
@@ -181,7 +181,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     rs485.isConnectedDelay = ini.value(key = KEY_IS_CONNECTED_DELAY, VALUE_IS_CONNECTED_DELAY).toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
-    if (rs485.isConnectedDelay < 0)
+    if ((rs485.isConnectedDelay < 0) || (rs485.isConnectedDelay > 100))
         goto fail_out_of_range;
     if (checkFlag)
         printf("%s: %d\n", KEY_IS_CONNECTED_DELAY, rs485.isConnectedDelay);
