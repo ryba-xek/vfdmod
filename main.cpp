@@ -91,7 +91,7 @@ int read_registers(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t>
 
         switch (uconfig.at(i).pinType) {
         case HAL_FLOAT:
-            *hal_udata[i]->floatPin = value * uconfig.at(i).multiplier / uconfig.at(i).divider;
+            *hal_udata[i]->floatPin = double(value) * uconfig.at(i).multiplier / uconfig.at(i).divider;
             break;
         case HAL_S32:
             *hal_udata[i]->s32Pin = value * uconfig.at(i).multiplier / uconfig.at(i).divider;
