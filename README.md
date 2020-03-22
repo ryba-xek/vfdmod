@@ -1,5 +1,11 @@
 # About
-Vfdmod is a HAL userspace interface to control a VFD over MODBUS RTU protocol. Vfdmod takes all important settings (such as serial device communication speed, VFD registers, control values, hal pin names, hal pin types etc.) from a single ini file, so you don't need to specify a lot of command line arguments after 'loadusr -W ...'. To read any additional parameters of your VFD no need to rebuild vfdmod from the sources, just edit an ini file instead.
+Vfdmod is a LinuxCNC HAL userspace interface to control any VFD what supports MODBUS RTU protocol.
+
+# Features
+- Vfdmod takes all settings from a single INI file, you don't need to specify a lot of command line arguments after a 'loadusr -W'.
+- Vfdmod provides full control of your VFD: start spindle forward/reverse, spindle stop, output speed monitoring and 'at-speed' signal conditioning.
+- Vfdmod allows to monitor any count of VFD's registers and turns return value to float or signed/unsigned integer at user's choice.
+- Vfdmod constantly monitors RS485 bus and allows to count an errors and shows last error code.
 
 # PyVcp screens
 **Tecorp HC1-CPlus**
