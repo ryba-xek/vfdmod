@@ -5,3 +5,6 @@ Vfdmod is a HAL userspace interface to control a VFD over MODBUS RTU protocol. V
 **Tecorp HC1-CPlus**
 
 ![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-1.png) ![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-2.png)
+
+# Download
+[Latest build on Google Drive](https://drive.google.com/drive/folders/1h3QomeaVBhC2EMr2kg6_Duv5fGrwGm8s?usp=sharing)
