@@ -6,5 +6,5 @@ Vfdmod is a HAL userspace interface to control a VFD over MODBUS RTU protocol. V
 
 ![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-1.png) ![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-2.png)
 
-# Download **.deb
+# Download \*.deb
 Latest build for Debian Wheezy & Stretch: [https://drive.google.com/drive/folders/1h3QomeaVBhC2EMr2kg6_Duv5fGrwGm8s](https://drive.google.com/drive/folders/1h3QomeaVBhC2EMr2kg6_Duv5fGrwGm8s)
