@@ -1,3 +1,4 @@
+#include <math.h>
 #include <getopt.h>
 #include <signal.h>
 #include <modbus/modbus-rtu.h>
@@ -318,9 +319,10 @@ int main(int argc, char *argv[])
 
     /* Modbus init */
     modbus_t *ctx;
+    printf("!!!\n");
     ctx = modbus_new_rtu(qPrintable(mconfig.rs485.serialDevice),
                          mconfig.rs485.baudRate,
-                         mconfig.rs485.parity.at(0).toAscii(),
+                         mconfig.rs485.parity.at(0).toLatin1(),
                          mconfig.rs485.dataBits,
                          mconfig.rs485.stopBits);
     if (!ctx)
