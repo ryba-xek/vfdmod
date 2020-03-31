@@ -35,20 +35,29 @@ void make_pyvcp_config(const QString &inifile, const main_config_t &mconfig, con
 void print_help()
 {
     printf("Usage:\n"
-           "\t%s [keys] CONFIGFILE\n",
+           "\t%s [--debug] [--check|--postgui|--pyvcp] CONFIGFILE\n"
+           "\t%s --new\n",
+           qPrintable(exeName),
            qPrintable(exeName));
     printf("Keys:\n"
            "\t-c, --check\tCheck config file for errors.\n"
            "\t-d, --debug\tEnable debug mode.\n"
            "\t-h, --help\tPrint this help.\n"
-           "\t-n, --new\tWrite blank config file.\n"
-           "\t-v, --version\tPrint program's version.\n");
+           "\t-n, --new\tMake a blank config file.\n"
+           "\t-P, --postgui\tMake postgui HAL file from existing config file.\n"
+           "\t-V, --pyvcp\tMake PyVcp XML file from existing config file.\n"
+           "\t-v, --version\tPrint program's version.\n"
+           "\tCONFIGFILE\tPlain text INI file.\n");
     printf("Description:\n"
-           "\tBlah-blah-blah and blah-blah-blah...\n");
+           "\tBlah-blah and blah-blah-blah...\n");
     printf("Examples:\n"
-           "\t%s config.ini\n"
-           "\t%s --new config.ini\n"
-           "\t%s --check config.ini\n",
+           "\t%s --new > config.ini\n"
+           "\t%s --check config.ini\n"
+           "\t%s --postgui config.ini > postgui.hal\n"
+           "\t%s --pyvcp config.ini > my-pyvcp-panel.xml\n"
+           "\t%s config.ini\n",
+           qPrintable(exeName),
+           qPrintable(exeName),
            qPrintable(exeName),
            qPrintable(exeName),
            qPrintable(exeName));
@@ -106,7 +115,7 @@ int read_registers(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t>
             *hal_udata[i]->u32Pin = value * uconfig.at(i).multiplier / uconfig.at(i).divider;
             break;
         default:
-            printf("%s: incorrect HAL pin type!\n", qPrintable(exeName));
+            fprintf(stderr, "%s: incorrect HAL pin type!\n", qPrintable(exeName));
         }
 
         okCounter++;
@@ -215,7 +224,7 @@ int main(int argc, char *argv[])
             count++;
             break;
         default:
-            printf("Arguments are wrong! Type '%s -h' for help.\n", qPrintable(exeName));
+            fprintf(stderr, "Arguments are wrong! Type '%s -h' for help.\n", qPrintable(exeName));
             return 0;
         }
     }
@@ -376,7 +385,7 @@ int main(int argc, char *argv[])
                 goto fail;
             break;
         default:
-            printf("%s: incorrect HAL pin type!\n", qPrintable(exeName));
+            fprintf(stderr, "%s: incorrect HAL pin type!\n", qPrintable(exeName));
         }
     }
 
@@ -394,7 +403,7 @@ int main(int argc, char *argv[])
     modbus_set_slave(ctx, mconfig.rs485.slaveAddress);
 
     if (modbus_connect(ctx) == -1) {
-        printf("%s: %s\n", qPrintable(exeName), modbus_strerror(errno));
+        fprintf(stderr, "%s: %s\n", qPrintable(exeName), modbus_strerror(errno));
         modbus_free(ctx);
         goto fail;
     }
@@ -434,7 +443,7 @@ int main(int argc, char *argv[])
                     *hal_udata[i]->u32Pin = 0;
                     break;
                 default:
-                    printf("%s: incorrect HAL pin type!\n", qPrintable(exeName));
+                    fprintf(stderr, "%s: incorrect HAL pin type!\n", qPrintable(exeName));
                 }
             }
         }
@@ -468,6 +477,6 @@ int main(int argc, char *argv[])
 fail:
     hal_exit(hal_comp_id);
     delete [] hal_udata;
-    printf("%s: critical error.\n", qPrintable(exeName));
+    fprintf(stderr, "%s: critical error.\n", qPrintable(exeName));
     return -1;
 }
