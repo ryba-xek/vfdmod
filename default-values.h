@@ -55,4 +55,7 @@
 #define VALUE_DIVIDER               "1"
 #define VALUE_MULTIPLIER            "1"
 
+/* Other */
+#define PYVCP                       "pyvcp"
+
 #endif // DEFAULTVALUES_H

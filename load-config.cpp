@@ -89,10 +89,10 @@ int load_common_group(QSettings &ini, common_config_t &common)
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    printf("%s/%s: parameter is wrong or missing!\n", GROUP_RS485, qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", GROUP_RS485, qPrintable(key));
     return -1;
 fail_out_of_range:
-    printf("%s/%s: parameter is out of range!\n", GROUP_RS485, qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is out of range!\n", GROUP_RS485, qPrintable(key));
     return -1;
 }
 
@@ -189,10 +189,10 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    printf("%s/%s: parameter is wrong or missing!\n", GROUP_RS485, qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", GROUP_RS485, qPrintable(key));
     return -1;
 fail_out_of_range:
-    printf("%s/%s: parameter is out of range!\n", GROUP_RS485, qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is out of range!\n", GROUP_RS485, qPrintable(key));
     return -1;
 }
 
@@ -268,10 +268,10 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    printf("%s/%s: parameter is wrong or missing!\n", GROUP_CONTROL, qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", GROUP_CONTROL, qPrintable(key));
     return -1;
 fail_out_of_range:
-    printf("%s/%s: parameter is out of range!\n", GROUP_CONTROL, qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is out of range!\n", GROUP_CONTROL, qPrintable(key));
     return -1;
 }
 
@@ -320,10 +320,10 @@ int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    printf("%s/%s: parameter is wrong or missing!\n", GROUP_SPINDLE_IN, qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", GROUP_SPINDLE_IN, qPrintable(key));
     return -1;
 fail_out_of_range:
-    printf("%s/%s: parameter is out of range!\n", GROUP_SPINDLE_IN, qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is out of range!\n", GROUP_SPINDLE_IN, qPrintable(key));
     return -1;
 }
 
@@ -372,10 +372,10 @@ int load_rpm_out_group(QSettings &ini, spindle_out_config_t &spindle)
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    printf("%s/%s: parameter is wrong or missing!\n", GROUP_SPINDLE_OUT, qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", GROUP_SPINDLE_OUT, qPrintable(key));
     return -1;
 fail_out_of_range:
-    printf("%s/%s: parameter is out of range!\n", GROUP_SPINDLE_OUT, qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is out of range!\n", GROUP_SPINDLE_OUT, qPrintable(key));
     return -1;
 }
 
@@ -383,11 +383,14 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
 {
     bool ok;
     QString key, value;
+
     ini.beginGroup(group);
     if (checkFlag)
         printf("\n[%s]\n", qPrintable(group));
 
+    /* Saving group name */
     user_config_t usrcfg;
+    usrcfg.groupName = group;
 
     /* Address */
     value = ini.value(key = KEY_ADDRESS, "").toString();
@@ -446,15 +449,16 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
     if (checkFlag)
         printf("%s\t\t: %s\n", KEY_PIN_NAME, qPrintable(usrcfg.pinName));
 
+    /* Append user parameter */
     uconfig.append(usrcfg);
 
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    printf("%s/%s: parameter is wrong or missing!\n", qPrintable(group), qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", qPrintable(group), qPrintable(key));
     return -1;
 fail_out_of_range:
-    printf("%s/%s: parameter is out of range!\n", qPrintable(group), qPrintable(key));
+    fprintf(stderr, "%s/%s: parameter is out of range!\n", qPrintable(group), qPrintable(key));
     return -1;
 }
 
@@ -470,7 +474,7 @@ void remove(QStringList &groups, const QString &group)
 int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_config_t> &uconfig)
 {
     if (!QFile::exists(inifile)) {
-        printf("File not found: %s\n", qPrintable(inifile));
+        fprintf(stderr, "File not found: %s\n", qPrintable(inifile));
         return -1;
     }
 
@@ -481,7 +485,7 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
 
     /* Removing common group from the list */
     if (!groups.contains(GROUP_COMMON, Qt::CaseInsensitive)) {
-        printf("Group not found: %s\n", GROUP_COMMON);
+        fprintf(stderr, "Group not found: %s\n", GROUP_COMMON);
         return -1;
     } else
         remove(groups, GROUP_COMMON);
@@ -491,7 +495,7 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
 
     /* Removing rs485 group from the list */
     if (!groups.contains(GROUP_RS485, Qt::CaseInsensitive)) {
-        printf("Group not found: %s\n", GROUP_RS485);
+        fprintf(stderr, "Group not found: %s\n", GROUP_RS485);
         return -1;
     } else
         remove(groups, GROUP_RS485);
@@ -502,7 +506,7 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
 
     /* Removing control group from the list */
     if (!groups.contains(GROUP_CONTROL, Qt::CaseInsensitive)) {
-        printf("Group not found: %s\n", GROUP_CONTROL);
+        fprintf(stderr, "Group not found: %s\n", GROUP_CONTROL);
         return -1;
     } else
         remove(groups, GROUP_CONTROL);
@@ -513,7 +517,7 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
 
     /* Removing rpm-in group from the list */
     if (!groups.contains(GROUP_SPINDLE_IN, Qt::CaseInsensitive)) {
-        printf("Group not found: %s\n", GROUP_SPINDLE_IN);
+        fprintf(stderr, "Group not found: %s\n", GROUP_SPINDLE_IN);
         return -1;
     } else
         remove(groups, GROUP_SPINDLE_IN);
@@ -524,7 +528,7 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
 
     /* Removing rpm-out group from the list */
     if (!groups.contains(GROUP_SPINDLE_OUT, Qt::CaseInsensitive)) {
-        printf("Group not found: %s\n", GROUP_SPINDLE_OUT);
+        fprintf(stderr, "Group not found: %s\n", GROUP_SPINDLE_OUT);
         return -1;
     } else
         remove(groups, GROUP_SPINDLE_OUT);

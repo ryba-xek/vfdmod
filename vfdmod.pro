@@ -15,15 +15,15 @@ DEFINES += APP_TARGET=\\\"$$TARGET\\\"
 
 TEMPLATE = app
 
-VERSION = 0.1.0
+VERSION = 0.2.0
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 INCLUDEPATH += /usr/include/linuxcnc
 LIBS += -lmodbus -llinuxcnchal
 
 SOURCES += main.cpp \
-    write-config.cpp \
-    load-config.cpp
+    load-config.cpp \
+    make-config.cpp
 
 HEADERS += \
     default-values.h \

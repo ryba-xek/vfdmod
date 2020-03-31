@@ -66,6 +66,7 @@ typedef struct {
 
 /* User parameter structure */
 typedef struct {
+    QString groupName;
     int address;
     int multiplier;
     int divider;

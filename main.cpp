@@ -9,24 +9,27 @@
 const char *github="Sources: https://github.com/aekhv/vfdmod/\n";
 const char *copyright = "2020 (c) Alexander E. (Khabarovsk, Russia)\n";
 
-int checkFlag, debugFlag, exitFlag, newFlag;
+int checkFlag, debugFlag, exitFlag, okCounter;
 QString exeName;
 hal_main_data_t *hal_mdata;
 hal_user_data_t **hal_udata;
-int okCounter;
 
-const char *short_options = "cdhn";
+const char *short_options = "cdhnvPV";
 const struct option long_options[] = {
     {"check",   no_argument, 0, 'c'},
     {"debug",   no_argument, 0, 'd'},
     {"help",    no_argument, 0, 'h'},
     {"new",     no_argument, 0, 'n'},
     {"version", no_argument, 0, 'v'},
+    {"postgui", no_argument, 0, 'P'},
+    {"pyvcp",   no_argument, 0, 'V'},
     {0, 0, 0, 0}
 };
 
 int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_config_t> &uconfig);
-int write_blank_config(const QString &inifile);
+void make_blank_config();
+void make_postgui_config(const main_config_t &mconfig, const QVector<user_config_t> &uconfig);
+void make_pyvcp_config(const QString &inifile, const main_config_t &mconfig, const QVector<user_config_t> &uconfig);
 
 void print_help()
 {
@@ -38,7 +41,7 @@ void print_help()
            "\t-d, --debug\tEnable debug mode.\n"
            "\t-h, --help\tPrint this help.\n"
            "\t-n, --new\tWrite blank config file.\n"
-           "\t--version\tPrint program's version.\n");
+           "\t-v, --version\tPrint program's version.\n");
     printf("Description:\n"
            "\tBlah-blah-blah and blah-blah-blah...\n");
     printf("Examples:\n"
@@ -171,16 +174,21 @@ int main(int argc, char *argv[])
     checkFlag = 0;
     debugFlag = 0;
     exitFlag = 0;
-    newFlag = 0;
     okCounter = 0;
+
+    int newFlag = 0;
+    int postguiFlag = 0;
+    int pyvcpFlag = 0;
     exeName = QFileInfo(argv[0]).fileName();
 
     int arg;
     int index;
+    int count = 0;
     while ((arg = getopt_long(argc, argv, short_options, long_options, &index)) != -1) {
         switch (arg) {
         case 'c':
             checkFlag = 1;
+            count++;
             break;
         case 'd':
             debugFlag = 1;
@@ -190,43 +198,71 @@ int main(int argc, char *argv[])
             return 0;
         case 'n':
             newFlag = 1;
+            count++;
             break;
         case 'v':
             printf("%s %s\n", APP_TARGET, APP_VERSION);
             printf(github);
             printf(copyright);
             return 0;
+        case 'P':
+            postguiFlag = 1;
+            count++;
+            break;
+        case 'V':
+            pyvcpFlag = 1;
+            count++;
+            break;
         default:
             printf("Arguments are wrong! Type '%s -h' for help.\n", qPrintable(exeName));
             return 0;
         }
     }
 
+    if (count > 1) {
+        fprintf(stderr, "Too many keys! Type '%s -h' for help.\n", qPrintable(exeName));
+        return 0;
+    }
+
+    /* If --new flag specified */
+    if (newFlag) {
+        make_blank_config();
+        return 0;
+    }
+
     if ((argc - optind) == 0) {
-        printf("Critical argument is missing! Type '%s -h' for help.\n", qPrintable(exeName));
+        fprintf(stderr, "File name is missing! Type '%s -h' for help.\n", qPrintable(exeName));
         return 0;
     }
 
     if ((argc - optind) > 1) {
-        printf("Too many arguments! Type '%s -h' for help.\n", qPrintable(exeName));
+        fprintf(stderr, "Too many arguments! Type '%s -h' for help.\n", qPrintable(exeName));
         return 0;
     }
 
     inifile = argv[optind];
 
-    /* If --check flag specified */
-    if (checkFlag) {
-        return load_config(inifile, mconfig, uconfig);
-    }
-
-    /* If --new flag specified */
-    if (newFlag) {
-        return write_blank_config(inifile);
-    }
-
     /* Finally, trying to load an existing config */
     if (load_config(inifile, mconfig, uconfig) < 0)
         return -1;
+
+    /* If --check flag specified */
+    if (checkFlag) {
+        // Nothing to do, just return
+        return 0;
+    }
+
+    /* If --postgui flag specified */
+    if (postguiFlag) {
+        make_postgui_config(mconfig, uconfig);
+        return 0;
+    }
+
+    /* If --pyvcp flag specified */
+    if (pyvcpFlag) {
+        make_pyvcp_config(QFileInfo(inifile).baseName(), mconfig, uconfig);
+        return 0;
+    }
 
     /* HAL init */
     int hal_comp_id = hal_init(qPrintable(mconfig.common.componentName));
@@ -319,7 +355,6 @@ int main(int argc, char *argv[])
 
     /* Modbus init */
     modbus_t *ctx;
-    printf("!!!\n");
     ctx = modbus_new_rtu(qPrintable(mconfig.rs485.serialDevice),
                          mconfig.rs485.baudRate,
                          mconfig.rs485.parity.at(0).toLatin1(),
