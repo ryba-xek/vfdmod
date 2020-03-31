@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QFileInfo>
 #include "structures.h"
+#include "default-values.h"
 
 const char *github="Sources: https://github.com/aekhv/vfdmod/\n";
 const char *copyright = "2020 (c) Alexander E. (Khabarovsk, Russia)\n";
@@ -274,29 +275,52 @@ int main(int argc, char *argv[])
     if (!hal_mdata)
         goto fail;
 
-    if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->isConnected), hal_comp_id,
-                          "%s.rs485.is-connected", qPrintable(mconfig.common.componentName)))
+    if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->isConnected), hal_comp_id, "%s.%s.%s",
+                              qPrintable(mconfig.common.componentName),
+                              HAL_GROUP_RS485,
+                              HAL_PIN_IS_CONNECTED))
         goto fail;
-    if (0 != hal_pin_s32_newf(HAL_OUT, &(hal_mdata->errorCount), hal_comp_id,
-                          "%s.rs485.error-count", qPrintable(mconfig.common.componentName)))
+
+    if (0 != hal_pin_s32_newf(HAL_OUT, &(hal_mdata->errorCount), hal_comp_id, "%s.%s.%s",
+                              qPrintable(mconfig.common.componentName),
+                              HAL_GROUP_RS485,
+                              HAL_PIN_ERROR_COUNT))
         goto fail;
-    if (0 != hal_pin_s32_newf(HAL_OUT, &(hal_mdata->lastError), hal_comp_id,
-                              "%s.rs485.last-error", qPrintable(mconfig.common.componentName)))
+
+    if (0 != hal_pin_s32_newf(HAL_OUT, &(hal_mdata->lastError), hal_comp_id, "%s.%s.%s",
+                              qPrintable(mconfig.common.componentName),
+                              HAL_GROUP_RS485,
+                              HAL_PIN_LAST_ERROR))
         goto fail;
-    if (0 != hal_pin_float_newf(HAL_IN, &(hal_mdata->spindleRpmIn), hal_comp_id,
-                                "%s.spindle.rpm-in", qPrintable(mconfig.common.componentName)))
+
+    if (0 != hal_pin_float_newf(HAL_IN, &(hal_mdata->spindleRpmIn), hal_comp_id, "%s.%s.%s",
+                                qPrintable(mconfig.common.componentName),
+                                HAL_GROUP_SPINDLE,
+                                HAL_PIN_RPM_IN))
         goto fail;
-    if (0 != hal_pin_float_newf(HAL_OUT, &(hal_mdata->spindleRpmOut), hal_comp_id,
-                                "%s.spindle.rpm-out", qPrintable(mconfig.common.componentName)))
+
+    if (0 != hal_pin_float_newf(HAL_OUT, &(hal_mdata->spindleRpmOut), hal_comp_id, "%s.%s.%s",
+                                qPrintable(mconfig.common.componentName),
+                                HAL_GROUP_SPINDLE,
+                                HAL_PIN_RPM_OUT))
         goto fail;
-    if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->atSpeed), hal_comp_id,
-                              "%s.spindle.at-speed", qPrintable(mconfig.common.componentName)))
+
+    if (0 != hal_pin_bit_newf(HAL_OUT, &(hal_mdata->atSpeed), hal_comp_id, "%s.%s.%s",
+                              qPrintable(mconfig.common.componentName),
+                              HAL_GROUP_SPINDLE,
+                              HAL_PIN_AT_SPEED))
         goto fail;
-    if (0 != hal_pin_bit_newf(HAL_IN, &(hal_mdata->runForward), hal_comp_id,
-                              "%s.spindle.run-forward", qPrintable(mconfig.common.componentName)))
+
+    if (0 != hal_pin_bit_newf(HAL_IN, &(hal_mdata->runForward), hal_comp_id, "%s.%s.%s",
+                              qPrintable(mconfig.common.componentName),
+                              HAL_GROUP_SPINDLE,
+                              HAL_PIN_RUN_FORWARD))
         goto fail;
-    if (0 != hal_pin_bit_newf(HAL_IN, &(hal_mdata->runReverse), hal_comp_id,
-                              "%s.spindle.run-reverse", qPrintable(mconfig.common.componentName)))
+
+    if (0 != hal_pin_bit_newf(HAL_IN, &(hal_mdata->runReverse), hal_comp_id, "%s.%s.%s",
+                              qPrintable(mconfig.common.componentName),
+                              HAL_GROUP_SPINDLE,
+                              HAL_PIN_RUN_REVERSE))
         goto fail;
 
     *hal_mdata->isConnected = 0;
@@ -321,8 +345,9 @@ int main(int argc, char *argv[])
         case HAL_FLOAT:
             if (0 == hal_pin_float_newf(HAL_OUT, &(hal_udata[i]->floatPin),
                                         hal_comp_id,
-                                        "%s.parameters.%s",
+                                        "%s.%s.%s",
                                         qPrintable(mconfig.common.componentName),
+                                        HAL_GROUP_USER_PARAMETERS,
                                         qPrintable(uconfig.at(i).pinName)))
                 *hal_udata[i]->floatPin = 0;
             else
@@ -331,8 +356,9 @@ int main(int argc, char *argv[])
         case HAL_S32:
             if (0 == hal_pin_s32_newf(HAL_OUT, &(hal_udata[i]->s32Pin),
                                       hal_comp_id,
-                                      "%s.parameters.%s",
+                                      "%s.%s.%s",
                                       qPrintable(mconfig.common.componentName),
+                                      HAL_GROUP_USER_PARAMETERS,
                                       qPrintable(uconfig.at(i).pinName)))
                 *hal_udata[i]->s32Pin = 0;
             else
@@ -341,8 +367,9 @@ int main(int argc, char *argv[])
         case HAL_U32:
             if (0 == hal_pin_u32_newf(HAL_OUT, &(hal_udata[i]->u32Pin),
                                       hal_comp_id,
-                                      "%s.parameters.%s",
+                                      "%s.%s.%s",
                                       qPrintable(mconfig.common.componentName),
+                                      HAL_GROUP_USER_PARAMETERS,
                                       qPrintable(uconfig.at(i).pinName)))
                 *hal_udata[i]->u32Pin = 0;
             else
@@ -385,20 +412,6 @@ int main(int argc, char *argv[])
         write_registers(ctx, mconfig);
         read_registers(ctx, mconfig, uconfig);
 
-        /* At speed may be valid only when spindle is running */
-        if (((0 != *hal_mdata->runReverse) || (0 != *hal_mdata->runForward)) &&
-                (0 != *hal_mdata->spindleRpmIn)) {
-
-            hal_float_t rpmIn = abs(*hal_mdata->spindleRpmIn);
-            hal_float_t rpmOut = *hal_mdata->spindleRpmOut;
-            if ((abs(rpmOut - rpmIn) / rpmIn) <= mconfig.common.atSpeedThreshold)
-                *hal_mdata->atSpeed = 1;
-            else
-                *hal_mdata->atSpeed = 0;
-
-        } else
-            *hal_mdata->atSpeed = 0;
-
         /* Is Modbus connection established? */
         if (okCounter > mconfig.rs485.isConnectedDelay) {
             *hal_mdata->isConnected = 1;
@@ -425,6 +438,20 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
+        /* At speed may be valid only when spindle is running */
+        if (((0 != *hal_mdata->runReverse) || (0 != *hal_mdata->runForward)) &&
+                (0 != *hal_mdata->spindleRpmIn) && (0 != *hal_mdata->isConnected)) {
+
+            hal_float_t rpmIn = abs(*hal_mdata->spindleRpmIn);
+            hal_float_t rpmOut = *hal_mdata->spindleRpmOut;
+            if ((abs(rpmOut - rpmIn) / rpmIn) <= mconfig.common.atSpeedThreshold)
+                *hal_mdata->atSpeed = 1;
+            else
+                *hal_mdata->atSpeed = 0;
+
+        } else
+            *hal_mdata->atSpeed = 0;
 
         /* Loop delay */
         loop_delay(mconfig.rs485);

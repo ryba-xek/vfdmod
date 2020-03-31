@@ -70,37 +70,54 @@ void make_blank_config()
 void make_postgui_config(const main_config_t &mconfig, const QVector<user_config_t> &uconfig)
 {
     printf("# Spindle output speed\n"
-           "net spindle-rpm-out %s.spindle.rpm-out => %s.spindle-rpm-out\n",
+           "net spindle-rpm-out %s.%s.%s => %s.%s\n",
            qPrintable(mconfig.common.componentName),
-           PYVCP);
+           HAL_GROUP_SPINDLE,
+           HAL_PIN_RPM_OUT,
+           PYVCP,
+           HAL_PIN_RPM_OUT);
 
-    printf("net spindle-at-speed <= %s.at-speed\n",
-           PYVCP);
+    printf("net spindle-at-speed <= %s.%s\n",
+           PYVCP,
+           HAL_PIN_AT_SPEED);
 
     printf("\n"
            "# Communication\n"
-           "net %s.0 %s.rs485.is-connected => %s.is-connected\n",
+           "net %s-%s %s.%s.%s => %s.%s\n",
            PYVCP,
+           HAL_PIN_IS_CONNECTED,
            qPrintable(mconfig.common.componentName),
-           PYVCP);
-
-    printf("net %s.1 %s.rs485.error-count => %s.error-count\n",
+           HAL_GROUP_RS485,
+           HAL_PIN_IS_CONNECTED,
            PYVCP,
-           qPrintable(mconfig.common.componentName),
-           PYVCP);
+           HAL_PIN_IS_CONNECTED);
 
-    printf("net %s.2 %s.rs485.last-error => %s.last-error\n"
+    printf("net %s-%s %s.%s.%s => %s.%s\n",
+           PYVCP,
+           HAL_PIN_ERROR_COUNT,
+           qPrintable(mconfig.common.componentName),
+           HAL_GROUP_RS485,
+           HAL_PIN_ERROR_COUNT,
+           PYVCP,
+           HAL_PIN_ERROR_COUNT);
+
+    printf("net %s-%s %s.%s.%s => %s.%s\n"
            "\n"
            "# User parameters\n",
            PYVCP,
+           HAL_PIN_LAST_ERROR,
            qPrintable(mconfig.common.componentName),
-           PYVCP);
+           HAL_GROUP_RS485,
+           HAL_PIN_LAST_ERROR,
+           PYVCP,
+           HAL_PIN_LAST_ERROR);
 
     for (int i = 0; i < uconfig.size(); i++) {
-        printf("net %s.%d %s.parameters.%s => %s.%s\n",
+        printf("net %s-%s %s.%s.%s => %s.%s\n",
                PYVCP,
-               i + 3,
+               qPrintable(uconfig.at(i).pinName),
                qPrintable(mconfig.common.componentName),
+               HAL_GROUP_USER_PARAMETERS,
                qPrintable(uconfig.at(i).pinName),
                PYVCP,
                qPrintable(uconfig.at(i).pinName));
@@ -111,18 +128,21 @@ void make_pyvcp_config(const QString &inifile, const main_config_t &mconfig, con
 {
     printf("<pyvcp>\n"
            "<labelframe text=\"%s\">\n"
-           "\n"
-           "    <label text=\"Output RPM:\"/>\n"
-           "    <bar halpin=\"spindle-rpm-out\" max_=\"%d\"/>\n"
-           "\n"
-           "    <table flexible_rows=\"[1]\" flexible_columns=\"[2]\">\n"
+           "\n", qPrintable(inifile));
+
+    printf("    <label text=\"Output RPM:\"/>\n"
+           "    <bar halpin=\"%s\" max_=\"%d\"/>\n"
+           "\n", HAL_PIN_RPM_OUT, mconfig.common.maxSpeedRpm);
+
+    printf("    <table flexible_rows=\"[1]\" flexible_columns=\"[2]\">\n"
            "    <tablerow/>\n"
            "        <label text=\"Spindle at speed\"/>\n"
-           "        <led halpin=\"at-speed\" size=\"12\" on_color=\"green\" off_color=\"red\"/>\n"
-           "    <tablerow/>\n"
-           "        <label text=\"'\\nParameters:'\"/>\n"
+           "        <led halpin=\"%s\" size=\"12\" on_color=\"green\" off_color=\"red\"/>\n"
+           "    <tablerow/>\n", HAL_PIN_AT_SPEED);
+
+    printf("        <label text=\"'\\nParameters:'\"/>\n"
            "\n"
-           "    <!-- User parameters start here -->\n", qPrintable(inifile), mconfig.common.maxSpeedRpm);
+           "    <!-- User parameters start here -->\n");
 
     for (int i = 0; i < uconfig.size(); i++) {
         printf("    <tablerow/>\n"
@@ -136,17 +156,27 @@ void make_pyvcp_config(const QString &inifile, const main_config_t &mconfig, con
     printf("    <!-- User parameters end -->\n"
            "\n"
            "    <tablerow/>\n"
-           "        <label text=\"'\\nRS485:'\"/>\n"
-           "    <tablerow/>\n"
-           "        <label text=\"is-connected\"/>\n"
-           "        <led halpin=\"is-connected\" size=\"12\" on_color=\"green\" off_color=\"red\"/>\n"
-           "    <tablerow/>\n"
-           "        <label text=\"error-count\"/>\n"
-           "        <s32 halpin=\"error-count\"/>\n"
-           "    <tablerow/>\n"
-           "        <label text=\"last-error\"/>\n"
-           "        <s32 halpin=\"last-error\"/>\n"
-           "    </table>\n"
+           "        <label text=\"'\\nRS485:'\"/>\n");
+
+    printf("    <tablerow/>\n"
+           "        <label text=\"%s\"/>\n"
+           "        <led halpin=\"%s\" size=\"12\" on_color=\"green\" off_color=\"red\"/>\n",
+           HAL_PIN_IS_CONNECTED,
+           HAL_PIN_IS_CONNECTED);
+
+    printf("    <tablerow/>\n"
+           "        <label text=\"%s\"/>\n"
+           "        <s32 halpin=\"%s\"/>\n",
+           HAL_PIN_ERROR_COUNT,
+           HAL_PIN_ERROR_COUNT);
+
+    printf("    <tablerow/>\n"
+           "        <label text=\"%s\"/>\n"
+           "        <s32 halpin=\"%s\"/>\n",
+           HAL_PIN_LAST_ERROR,
+           HAL_PIN_LAST_ERROR);
+
+    printf("    </table>\n"
            "\n"
            "</labelframe>\n"
            "</pyvcp>\n");

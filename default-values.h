@@ -55,7 +55,20 @@
 #define VALUE_DIVIDER               "1"
 #define VALUE_MULTIPLIER            "1"
 
-/* Other */
+/* Default HAL groups & pins */
+#define HAL_GROUP_RS485             "rs485"
+#define HAL_GROUP_USER_PARAMETERS   "parameters"
+#define HAL_GROUP_SPINDLE           "spindle"
+#define HAL_PIN_AT_SPEED            "at-speed"
+#define HAL_PIN_RPM_IN              "rpm-in"
+#define HAL_PIN_RPM_OUT             "rpm-out"
+#define HAL_PIN_RUN_FORWARD         "run-forward"
+#define HAL_PIN_RUN_REVERSE         "run-reverse"
+#define HAL_PIN_IS_CONNECTED        "is-connected"
+#define HAL_PIN_ERROR_COUNT         "error-count"
+#define HAL_PIN_LAST_ERROR          "last-error"
+
+/* Default PyVcp name to make postgui HAL file */
 #define PYVCP                       "pyvcp"
 
 #endif // DEFAULTVALUES_H
