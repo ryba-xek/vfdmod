@@ -10,7 +10,7 @@ Vfdmod is a LinuxCNC HAL userspace interface to control any VFD what supports MO
 # PyVcp screens
 **Tecorp HC1-CPlus**
 
-![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-1.png) ![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-2.png)
+![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-axis.png) ![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-hal.png)
 
 # Download \*.deb
 Latest build for Debian Wheezy & Stretch: [https://drive.google.com/drive/folders/1h3QomeaVBhC2EMr2kg6_Duv5fGrwGm8s](https://drive.google.com/drive/folders/1h3QomeaVBhC2EMr2kg6_Duv5fGrwGm8s)
