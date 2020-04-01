@@ -159,21 +159,18 @@ void make_pyvcp_config(const QString &inifile, const main_config_t &mconfig, con
            "        <label text=\"'\\nRS485:'\"/>\n");
 
     printf("    <tablerow/>\n"
-           "        <label text=\"%s\"/>\n"
+           "        <label text=\"Is connected\"/>\n"
            "        <led halpin=\"%s\" size=\"12\" on_color=\"green\" off_color=\"red\"/>\n",
-           HAL_PIN_IS_CONNECTED,
            HAL_PIN_IS_CONNECTED);
 
     printf("    <tablerow/>\n"
-           "        <label text=\"%s\"/>\n"
+           "        <label text=\"Error count\"/>\n"
            "        <s32 halpin=\"%s\"/>\n",
-           HAL_PIN_ERROR_COUNT,
            HAL_PIN_ERROR_COUNT);
 
     printf("    <tablerow/>\n"
-           "        <label text=\"%s\"/>\n"
+           "        <label text=\"Last error\"/>\n"
            "        <s32 halpin=\"%s\"/>\n",
-           HAL_PIN_LAST_ERROR,
            HAL_PIN_LAST_ERROR);
 
     printf("    </table>\n"
