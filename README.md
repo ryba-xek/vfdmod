@@ -13,5 +13,6 @@ Vfdmod is a LinuxCNC userspace component designed to control any VFD what suppor
 # Download \*.deb
 Latest build for Debian Wheezy & Stretch: [https://drive.google.com/drive/folders/1h3QomeaVBhC2EMr2kg6_Duv5fGrwGm8s](https://drive.google.com/drive/folders/1h3QomeaVBhC2EMr2kg6_Duv5fGrwGm8s)
 
-# Usage
-Coming soon...
+# Usage & support
+English: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
+Russian: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
