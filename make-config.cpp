@@ -7,8 +7,8 @@
 void make_blank_config()
 {
     printf("[%s]\n", GROUP_COMMON);
-    printf("%s=%s\n", KEY_MAX_SPEED_RPM, "?");
-    printf("%s=%s\n", KEY_MIN_SPEED_RPM, "?");
+    printf("%s=%s\n", KEY_MAX_SPEED_RPM, "????");
+    printf("%s=%s\n", KEY_MIN_SPEED_RPM, "????");
     printf("%s=%s\n", KEY_AT_SPEED_THRESHOLD, VALUE_AT_SPEED_THRESHOLD);
     printf("\n");
 
@@ -19,8 +19,6 @@ void make_blank_config()
     printf("%s=%s\n", KEY_DATA_BITS, VALUE_DATA_BITS);
     printf("%s=%s\n", KEY_PARITY, VALUE_PARITY);
     printf("%s=%s\n", KEY_STOP_BITS, VALUE_STOP_BITS);
-    printf("%s=%s\n", KEY_LOOP_DELAY, VALUE_LOOP_DELAY);
-    printf("%s=%s\n", KEY_PROTOCOL_DELAY, VALUE_PROTOCOL_DELAY);
     printf("\n");
 
     printf("[%s]\n", GROUP_CONTROL);

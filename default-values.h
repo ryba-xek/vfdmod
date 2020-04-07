@@ -9,7 +9,7 @@
 #define KEY_MAX_SPEED_RPM           "MaxSpeedRPM"
 #define KEY_MIN_SPEED_RPM           "MinSpeedRPM"
 #define KEY_AT_SPEED_THRESHOLD      "AtSpeedThreshold"
-#define VALUE_AT_SPEED_THRESHOLD    "0.01"
+#define VALUE_AT_SPEED_THRESHOLD    "0.05"
 
 /* Communication group */
 #define GROUP_RS485                 "RS485"
@@ -22,6 +22,8 @@
 #define KEY_LOOP_DELAY              "LoopDelay"
 #define KEY_PROTOCOL_DELAY          "ProtocolDelay"
 #define KEY_IS_CONNECTED_DELAY      "IsConnectedDelay"
+#define KEY_CONNECTION_DELAY        "ConnectionDelay"
+#define KEY_CRITICAL_ERRORS         "CriticalErrors"
 #define VALUE_SLAVE_ADDRESS         "1"
 #define VALUE_SERIAL_DEVICE         "/dev/ttyS0"
 #define VALUE_BAUD_RATE             "38400"
@@ -31,6 +33,7 @@
 #define VALUE_LOOP_DELAY            "200"
 #define VALUE_PROTOCOL_DELAY        "4"
 #define VALUE_IS_CONNECTED_DELAY    "10"
+#define VALUE_CONNECTION_DELAY      "1000"
 
 /* Spindle control group */
 #define GROUP_CONTROL               "Control"

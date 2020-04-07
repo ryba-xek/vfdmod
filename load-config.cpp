@@ -99,7 +99,8 @@ fail_out_of_range:
 int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
 {
     bool ok;
-    QString key;
+    QString key, line;
+    QStringList errors;
 
     ini.beginGroup(GROUP_RS485);
     if (checkFlag)
@@ -163,7 +164,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     rs485.loopDelay = ini.value(key = KEY_LOOP_DELAY, VALUE_LOOP_DELAY).toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
-    if ((rs485.loopDelay < 0) || (rs485.loopDelay > 2000))
+    if ((rs485.loopDelay < 0) || (rs485.loopDelay > 10000))
         goto fail_out_of_range;
     if (checkFlag)
         printf("%s\t: %d\n", KEY_LOOP_DELAY, rs485.loopDelay);
@@ -172,7 +173,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     rs485.protocolDelay = ini.value(key = KEY_PROTOCOL_DELAY, VALUE_PROTOCOL_DELAY).toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
-    if ((rs485.protocolDelay < 4) || (rs485.protocolDelay > 100))
+    if ((rs485.protocolDelay < 0) || (rs485.protocolDelay > 100))
         goto fail_out_of_range;
     if (checkFlag)
         printf("%s\t: %d\n", KEY_PROTOCOL_DELAY, rs485.protocolDelay);
@@ -185,6 +186,46 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
         goto fail_out_of_range;
     if (checkFlag)
         printf("%s: %d\n", KEY_IS_CONNECTED_DELAY, rs485.isConnectedDelay);
+
+    /* Connection delay */
+    rs485.connectionDelay = ini.value(key = KEY_CONNECTION_DELAY, VALUE_CONNECTION_DELAY).toInt(&ok);
+    if (!ok)
+        goto fail_invalid_parameter;
+    if ((rs485.connectionDelay < 0) || (rs485.connectionDelay > 10000))
+        goto fail_out_of_range;
+    if (checkFlag)
+        printf("%s\t: %d\n", KEY_CONNECTION_DELAY, rs485.connectionDelay);
+
+    /* Critical errors */
+    errors = ini.value(key = KEY_CRITICAL_ERRORS, "").toStringList();
+    foreach (QString error, errors) {
+        int e;
+
+        if (error.toLower().startsWith("0x"))
+            e = hex_to_int(error, &ok);
+        else
+            e = error.toInt(&ok);
+
+        if (!ok)
+            goto fail_invalid_parameter;
+        else
+            rs485.criticalErrors.append(e);
+    }
+
+    if (checkFlag) {
+        if (!rs485.criticalErrors.isEmpty()) {
+            printf("%s\t: ", KEY_CRITICAL_ERRORS);
+            for (int i = 0; i < rs485.criticalErrors.count(); i++) {
+                if (i != rs485.criticalErrors.count() - 1)
+                    printf("%d, ", rs485.criticalErrors.at(i));
+                else
+                    printf("%d ", rs485.criticalErrors.at(i));
+            }
+            printf("(auto reconnection mode ENABLED)\n");
+        }
+        else
+            printf("%s\t: (auto reconnection mode DISABLED)\n", KEY_CRITICAL_ERRORS);
+    }
 
     ini.endGroup();
     return 0;
@@ -491,7 +532,8 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
         remove(groups, GROUP_COMMON);
 
     /* Loading common settings */
-    load_common_group(ini, mconfig.common);
+    if (load_common_group(ini, mconfig.common) < 0)
+        return -1;
 
     /* Removing rs485 group from the list */
     if (!groups.contains(GROUP_RS485, Qt::CaseInsensitive)) {
@@ -545,6 +587,6 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
     }
 
     if (checkFlag)
-        printf("--- Config file is OK ---\n");
+        printf("\n--- Config file is OK ---\n");
     return 0;
 }

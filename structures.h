@@ -5,6 +5,7 @@
 #define ULAPI
 
 #include <hal.h>
+#include <QVector>
 
 /*** INI STRUCTURES ***/
 
@@ -26,11 +27,16 @@ typedef struct {
     int stopBits;
     // Delay in milliseconds after all user parameters have been transferred, 100...200 ms should be fine.
     int loopDelay;
-    // Delay in characters at beginning of every Modbus request.
-    // Modbus RTU specification recommends at least 3.5 characters, so minimum value must be 4.
+    // Delay in characters at beginning of every Modbus request. Modbus RTU specification recommends
+    // at least 3.5 characters, so minimum value must be 4.
     int protocolDelay;
     // How many successfull Modbus requests should be completed to set HAL isConnected pin.
     int isConnectedDelay;
+    // Delay in millisecods before reconnection attempt.
+    int connectionDelay;
+    // Error codes what call reconnection attempt.
+    QVector<int> criticalErrors;
+
 } rs485_config_t;
 
 /* Spindle control settings */

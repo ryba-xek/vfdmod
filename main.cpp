@@ -10,7 +10,7 @@
 const char *github="Sources: https://github.com/aekhv/vfdmod/\n";
 const char *copyright = "2020 (c) Alexander E. (Khabarovsk, Russia)\n";
 
-int checkFlag, debugFlag, exitFlag, okCounter;
+int checkFlag, debugFlag, exitFlag, okCounter, connectionLost;
 QString exeName;
 hal_main_data_t *hal_mdata;
 hal_user_data_t **hal_udata;
@@ -73,10 +73,10 @@ void protocol_delay(const rs485_config_t &cfg)
     nanosleep(&loop_timespec, NULL);
 }
 
-void loop_delay(const rs485_config_t &cfg)
+void delay_ms(const int &t)
 {
-    long s = cfg.loopDelay / 1000;
-    long ns = (cfg.loopDelay % 1000) * 1000000l;
+    long s = t / 1000;
+    long ns = (t % 1000) * 1000000l;
     struct timespec loop_timespec = {s, ns};
     nanosleep(&loop_timespec, NULL);
 }
@@ -89,6 +89,9 @@ void closeRequest(int param) {
 
 int read_registers(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t> &uconfig)
 {
+    if (connectionLost)
+        return -1;
+
     uint16_t value;
 
     /* Reading spindle output speed */
@@ -131,6 +134,9 @@ fail:
 
 int write_registers(modbus_t *ctx, main_config_t &mconfig)
 {
+    if (connectionLost)
+        return -1;
+
     int value;
 
     /* Command speed */
@@ -185,6 +191,7 @@ int main(int argc, char *argv[])
     debugFlag = 0;
     exitFlag = 0;
     okCounter = 0;
+    connectionLost = 0;
 
     int newFlag = 0;
     int postguiFlag = 0;
@@ -462,8 +469,27 @@ int main(int argc, char *argv[])
         } else
             *hal_mdata->atSpeed = 0;
 
-        /* Loop delay */
-        loop_delay(mconfig.rs485);
+        /* Is last error code means connection lost? */
+        foreach (int err, mconfig.rs485.criticalErrors) {
+            if (*hal_mdata->lastError == err) {
+                /* Close connection */
+                modbus_close(ctx);
+                connectionLost = 1;
+                break;
+            }
+        }
+
+        /* Reconnection */
+        if (connectionLost) {
+            /* Connection delay */
+            delay_ms(mconfig.rs485.connectionDelay);
+            /* Open connection */
+            if (modbus_connect(ctx) != -1) {
+                connectionLost = 0;
+            }
+        } else
+            /* Loop delay */
+            delay_ms(mconfig.rs485.loopDelay);
     }
 
     modbus_close(ctx);
