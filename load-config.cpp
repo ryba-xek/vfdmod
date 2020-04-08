@@ -199,8 +199,10 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     /* Critical errors */
     errors = ini.value(key = KEY_CRITICAL_ERRORS, "").toStringList();
     foreach (QString error, errors) {
-        int e;
+        if (error.isEmpty())
+            continue;
 
+        int e;
         if (error.toLower().startsWith("0x"))
             e = hex_to_int(error, &ok);
         else

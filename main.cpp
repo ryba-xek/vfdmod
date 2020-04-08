@@ -484,11 +484,13 @@ int main(int argc, char *argv[])
             /* Connection delay */
             delay_ms(mconfig.rs485.connectionDelay);
             /* Open connection */
-            if (modbus_connect(ctx) != -1) {
+            if (modbus_connect(ctx) == -1) {
+                (*hal_mdata->errorCount)++;
+            } else
                 connectionLost = 0;
-            }
         } else
             /* Loop delay */
+            printf("*** LOOP DELAY ***\n");
             delay_ms(mconfig.rs485.loopDelay);
     }
 
