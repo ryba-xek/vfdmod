@@ -10,7 +10,7 @@
 const char *github="Sources: https://github.com/aekhv/vfdmod/\n";
 const char *copyright = "2020 (c) Alexander E. (Khabarovsk, Russia)\n";
 
-int checkFlag, debugFlag, exitFlag, okCounter, connectionLost;
+int checkFlag, debugFlag, exitFlag, okCounter, serialDeviceIsOpened;
 QString exeName;
 hal_main_data_t *hal_mdata;
 hal_user_data_t **hal_udata;
@@ -89,23 +89,38 @@ void closeRequest(int param) {
 
 int read_registers(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t> &uconfig)
 {
-    if (connectionLost)
-        return -1;
-
     uint16_t value;
 
     /* Reading spindle output speed */
+    if (debugFlag)
+        printf("\n%s: reading '%s.%s' from address %d (0x%04X)...\n",
+               qPrintable(exeName),
+               HAL_GROUP_SPINDLE,
+               HAL_PIN_RPM_OUT,
+               mconfig.rpmOut.address,
+               mconfig.rpmOut.address);
     protocol_delay(mconfig.rs485);
     if (1 != modbus_read_registers(ctx, mconfig.rpmOut.address, 1, &value))
         goto fail;
+    if (debugFlag)
+        printf("%s: returned value is %d (0x%04X)\n", qPrintable(exeName), value, value);
     okCounter++;
     *hal_mdata->spindleRpmOut = double(value) * mconfig.rpmOut.multiplier / mconfig.rpmOut.divider;
 
     /* Reading user parameters */
     for (int i = 0; i < uconfig.count(); ++i) {
+        if (debugFlag)
+            printf("\n%s: reading '%s.%s' from address %d (0x%04X)...\n",
+                   qPrintable(exeName),
+                   HAL_GROUP_USER_PARAMETERS,
+                   qPrintable(uconfig.at(i).pinName),
+                   uconfig.at(i).address,
+                   uconfig.at(i).address);
         protocol_delay(mconfig.rs485);
         if (1 != modbus_read_registers(ctx, uconfig.at(i).address, 1, &value))
             goto fail;
+        if (debugFlag)
+            printf("%s: returned value is %d (0x%04X)\n", qPrintable(exeName), value, value);
 
         switch (uconfig.at(i).pinType) {
         case HAL_FLOAT:
@@ -134,10 +149,7 @@ fail:
 
 int write_registers(modbus_t *ctx, main_config_t &mconfig)
 {
-    if (connectionLost)
-        return -1;
-
-    int value;
+    uint16_t value;
 
     /* Command speed */
     hal_float_t speed = abs(*hal_mdata->spindleRpmIn);
@@ -151,11 +163,14 @@ int write_registers(modbus_t *ctx, main_config_t &mconfig)
     speed = speed * mconfig.rpmIn.multiplier / mconfig.rpmIn.divider;
 
     if (debugFlag)
-        printf("%s: command speed value >>> %f\n", qPrintable(exeName), speed);
+        printf("\n%s: setting command speed value to %d (0x%04X)...\n", qPrintable(exeName), int(speed), int(speed));
 
     protocol_delay(mconfig.rs485);
+    //    if (1 != modbus_write_registers(ctx, mconfig.rpmIn.address, 1, &value))
     if (1 != modbus_write_register(ctx, mconfig.rpmIn.address, int(speed)))
         goto fail;
+    else
+        okCounter++;
 
     /* Control value */
     value = mconfig.control.stopValue;
@@ -167,11 +182,14 @@ int write_registers(modbus_t *ctx, main_config_t &mconfig)
         value = mconfig.control.runFwdValue;
 
     if (debugFlag)
-        printf("%s: control value >>> %d\n", qPrintable(exeName), value);
+        printf("\n%s: setting control word value to %d (0x%04X)...\n", qPrintable(exeName), value, value);
 
     protocol_delay(mconfig.rs485);
+    //    if (1 != modbus_write_registers(ctx, mconfig.control.address, 1, &value))
     if (1 != modbus_write_register(ctx, mconfig.control.address, value))
         goto fail;
+    else
+        okCounter++;
 
     return 0;
 fail:
@@ -191,7 +209,7 @@ int main(int argc, char *argv[])
     debugFlag = 0;
     exitFlag = 0;
     okCounter = 0;
-    connectionLost = 0;
+    serialDeviceIsOpened = 0;
 
     int newFlag = 0;
     int postguiFlag = 0;
@@ -415,6 +433,8 @@ int main(int argc, char *argv[])
         goto fail;
     }
 
+    serialDeviceIsOpened = 1;
+
     signal(SIGINT, closeRequest);
     signal(SIGKILL, closeRequest);
     signal(SIGTERM, closeRequest);
@@ -424,14 +444,43 @@ int main(int argc, char *argv[])
 
     /* MAIN LOOP */
     while (!exitFlag) {
-        /* Writing data & receiving data */
-        write_registers(ctx, mconfig);
-        read_registers(ctx, mconfig, uconfig);
+
+        /* Reading modbus data */
+        if (serialDeviceIsOpened) {
+            if (read_registers(ctx, mconfig, uconfig) < 0)
+                /* Is last error code means connection lost? */
+                foreach (int err, mconfig.rs485.criticalErrors) {
+                    if (*hal_mdata->lastError == err) {
+                        /* Close connection */
+                        modbus_close(ctx);
+                        serialDeviceIsOpened = 0;
+                        if (debugFlag)
+                            printf("\n%s: critical error detected, connection closed!\n", qPrintable(exeName));
+                        break;
+                    }
+                }
+        }
+
+        /* Writing modbus data */
+        if (serialDeviceIsOpened) {
+            if (write_registers(ctx, mconfig) < 0)
+                /* Is last error code means connection lost? */
+                foreach (int err, mconfig.rs485.criticalErrors) {
+                    if (*hal_mdata->lastError == err) {
+                        /* Close connection */
+                        modbus_close(ctx);
+                        serialDeviceIsOpened = 0;
+                        if (debugFlag)
+                            printf("\n%s: critical error detected, connection closed!\n", qPrintable(exeName));
+                        break;
+                    }
+                }
+        }
 
         /* Is Modbus connection established? */
-        if (okCounter > mconfig.rs485.isConnectedDelay) {
+        if (okCounter >= mconfig.rs485.isConnectedDelay) {
             *hal_mdata->isConnected = 1;
-            okCounter = mconfig.rs485.isConnectedDelay;
+            okCounter = mconfig.rs485.isConnectedDelay; // to avoid okCounter overflow
         } else {
             *hal_mdata->isConnected = 0;
             /* If connection lost then also need to clear HAL output data */
@@ -469,28 +518,19 @@ int main(int argc, char *argv[])
         } else
             *hal_mdata->atSpeed = 0;
 
-        /* Is last error code means connection lost? */
-        foreach (int err, mconfig.rs485.criticalErrors) {
-            if (*hal_mdata->lastError == err) {
-                /* Close connection */
-                modbus_close(ctx);
-                connectionLost = 1;
-                break;
-            }
-        }
 
         /* Reconnection */
-        if (connectionLost) {
+        if (!serialDeviceIsOpened) {
             /* Connection delay */
             delay_ms(mconfig.rs485.connectionDelay);
             /* Open connection */
             if (modbus_connect(ctx) == -1) {
                 (*hal_mdata->errorCount)++;
-            } else
-                connectionLost = 0;
+            } else {
+                serialDeviceIsOpened = 1;
+            }
         } else
             /* Loop delay */
-            printf("*** LOOP DELAY ***\n");
             delay_ms(mconfig.rs485.loopDelay);
     }
 
@@ -505,6 +545,6 @@ int main(int argc, char *argv[])
 fail:
     hal_exit(hal_comp_id);
     delete [] hal_udata;
-    fprintf(stderr, "%s: critical error.\n", qPrintable(exeName));
+    fprintf(stderr, "%s: fatal error.\n", qPrintable(exeName));
     return -1;
 }

@@ -57,7 +57,7 @@ int load_common_group(QSettings &ini, common_config_t &common)
     if (common.componentName.isEmpty())
         common.componentName = exeName;
     if(checkFlag)
-        printf("%s\t: %s\n", KEY_COMPONENT_NAME, qPrintable(common.componentName));
+        printf("%s\t\t: %s\n", KEY_COMPONENT_NAME, qPrintable(common.componentName));
 
     /* Max speed RPM */
     common.maxSpeedRpm = ini.value(key = KEY_MAX_SPEED_RPM, "").toInt(&ok);
@@ -66,7 +66,7 @@ int load_common_group(QSettings &ini, common_config_t &common)
     if (common.maxSpeedRpm <= 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_MAX_SPEED_RPM, common.maxSpeedRpm);
+        printf("%s\t\t: %d\n", KEY_MAX_SPEED_RPM, common.maxSpeedRpm);
 
     /* Min speed RPM */
     common.minSpeedRpm = ini.value(key = KEY_MIN_SPEED_RPM, "").toInt(&ok);
@@ -75,7 +75,7 @@ int load_common_group(QSettings &ini, common_config_t &common)
     if (common.minSpeedRpm <= 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_MIN_SPEED_RPM, common.minSpeedRpm);
+        printf("%s\t\t: %d\n", KEY_MIN_SPEED_RPM, common.minSpeedRpm);
 
     /* At speed threshold */
     common.atSpeedThreshold = ini.value(key = KEY_AT_SPEED_THRESHOLD, VALUE_AT_SPEED_THRESHOLD).toDouble(&ok);
@@ -84,7 +84,7 @@ int load_common_group(QSettings &ini, common_config_t &common)
     if ((common.atSpeedThreshold < 0) || (common.atSpeedThreshold > 1.0))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s: %f\n", KEY_AT_SPEED_THRESHOLD, common.atSpeedThreshold);
+        printf("%s\t: %f\n", KEY_AT_SPEED_THRESHOLD, common.atSpeedThreshold);
 
     ini.endGroup();
     return 0;
@@ -99,7 +99,7 @@ fail_out_of_range:
 int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
 {
     bool ok;
-    QString key, line;
+    QString key;
     QStringList errors;
 
     ini.beginGroup(GROUP_RS485);
@@ -113,14 +113,14 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     if ((rs485.slaveAddress < 0) || (rs485.slaveAddress > 0xFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_SLAVE_ADDRESS, rs485.slaveAddress);
+        printf("%s\t\t: %d\n", KEY_SLAVE_ADDRESS, rs485.slaveAddress);
 
     /* Serial device path */
     rs485.serialDevice = ini.value(key = KEY_SERIAL_DEVICE, VALUE_SERIAL_DEVICE).toString();
     if (rs485.serialDevice.isEmpty())
         goto fail_invalid_parameter;
     if (checkFlag)
-        printf("%s\t: %s\n", KEY_SERIAL_DEVICE, qPrintable(rs485.serialDevice));
+        printf("%s\t\t: %s\n", KEY_SERIAL_DEVICE, qPrintable(rs485.serialDevice));
 
     /* Baud rate */
     rs485.baudRate = ini.value(key = KEY_BAUD_RATE, VALUE_BAUD_RATE).toInt(&ok);
@@ -129,7 +129,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     if (rs485.baudRate < 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_BAUD_RATE, rs485.baudRate);
+        printf("%s\t\t: %d\n", KEY_BAUD_RATE, rs485.baudRate);
 
     /* Data bits */
     rs485.dataBits = ini.value(key = KEY_DATA_BITS, VALUE_DATA_BITS).toInt(&ok);
@@ -138,7 +138,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     if (rs485.dataBits < 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_DATA_BITS, rs485.dataBits);
+        printf("%s\t\t: %d\n", KEY_DATA_BITS, rs485.dataBits);
 
     /* Parity */
     rs485.parity = ini.value(key = KEY_PARITY, VALUE_PARITY).toString();
@@ -149,7 +149,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
             && (rs485.parity != "O"))
         goto fail_invalid_parameter;
     if (checkFlag)
-        printf("%s\t\t: %s\n", KEY_PARITY, qPrintable(rs485.parity));
+        printf("%s\t\t\t: %s\n", KEY_PARITY, qPrintable(rs485.parity));
 
     /* Stop bits */
     rs485.stopBits = ini.value(key = KEY_STOP_BITS, VALUE_STOP_BITS).toInt(&ok);
@@ -158,7 +158,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     if (rs485.stopBits < 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_STOP_BITS, rs485.stopBits);
+        printf("%s\t\t: %d\n", KEY_STOP_BITS, rs485.stopBits);
 
     /* Loop delay */
     rs485.loopDelay = ini.value(key = KEY_LOOP_DELAY, VALUE_LOOP_DELAY).toInt(&ok);
@@ -167,7 +167,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     if ((rs485.loopDelay < 0) || (rs485.loopDelay > 10000))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_LOOP_DELAY, rs485.loopDelay);
+        printf("%s\t\t: %d\n", KEY_LOOP_DELAY, rs485.loopDelay);
 
     /* Protocol delay */
     rs485.protocolDelay = ini.value(key = KEY_PROTOCOL_DELAY, VALUE_PROTOCOL_DELAY).toInt(&ok);
@@ -176,28 +176,19 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     if ((rs485.protocolDelay < 0) || (rs485.protocolDelay > 100))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_PROTOCOL_DELAY, rs485.protocolDelay);
+        printf("%s\t\t: %d\n", KEY_PROTOCOL_DELAY, rs485.protocolDelay);
 
     /* Is connected delay */
     rs485.isConnectedDelay = ini.value(key = KEY_IS_CONNECTED_DELAY, VALUE_IS_CONNECTED_DELAY).toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
-    if ((rs485.isConnectedDelay < 0) || (rs485.isConnectedDelay > 100))
+    if ((rs485.isConnectedDelay < 1) || (rs485.isConnectedDelay > 100))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s: %d\n", KEY_IS_CONNECTED_DELAY, rs485.isConnectedDelay);
+        printf("%s\t: %d\n", KEY_IS_CONNECTED_DELAY, rs485.isConnectedDelay);
 
-    /* Connection delay */
-    rs485.connectionDelay = ini.value(key = KEY_CONNECTION_DELAY, VALUE_CONNECTION_DELAY).toInt(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if ((rs485.connectionDelay < 0) || (rs485.connectionDelay > 10000))
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t: %d\n", KEY_CONNECTION_DELAY, rs485.connectionDelay);
-
-    /* Critical errors */
-    errors = ini.value(key = KEY_CRITICAL_ERRORS, "").toStringList();
+    /* Connection errors */
+    errors = ini.value(key = KEY_CONNECTION_ERRORS, "").toStringList();
     foreach (QString error, errors) {
         if (error.isEmpty())
             continue;
@@ -216,7 +207,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
 
     if (checkFlag) {
         if (!rs485.criticalErrors.isEmpty()) {
-            printf("%s\t: ", KEY_CRITICAL_ERRORS);
+            printf("%s\t: ", KEY_CONNECTION_ERRORS);
             for (int i = 0; i < rs485.criticalErrors.count(); i++) {
                 if (i != rs485.criticalErrors.count() - 1)
                     printf("%d, ", rs485.criticalErrors.at(i));
@@ -226,8 +217,17 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
             printf("(auto reconnection mode ENABLED)\n");
         }
         else
-            printf("%s\t: (auto reconnection mode DISABLED)\n", KEY_CRITICAL_ERRORS);
+            printf("%s\t: (auto reconnection mode DISABLED)\n", KEY_CONNECTION_ERRORS);
     }
+
+    /* Connection delay */
+    rs485.connectionDelay = ini.value(key = KEY_CONNECTION_DELAY, VALUE_CONNECTION_DELAY).toInt(&ok);
+    if (!ok)
+        goto fail_invalid_parameter;
+    if ((rs485.connectionDelay < 0) || (rs485.connectionDelay > 10000))
+        goto fail_out_of_range;
+    if (checkFlag)
+        printf("%s\t\t: %d\n", KEY_CONNECTION_DELAY, rs485.connectionDelay);
 
     ini.endGroup();
     return 0;
@@ -259,7 +259,7 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     if ((control.address < 0) || (control.address > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %s (%d)\n", KEY_ADDRESS,
+        printf("%s\t\t\t: %s (%d)\n", KEY_ADDRESS,
                qPrintable(QString("0x%1").arg(control.address, 4, 16, QChar('0'))),
                control.address);
 
@@ -274,7 +274,7 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     if ((control.runFwdValue < 0) || (control.runFwdValue > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %s (%d)\n", KEY_RUN_FWD,
+        printf("%s\t\t: %s (%d)\n", KEY_RUN_FWD,
                qPrintable(QString("0x%1").arg(control.runFwdValue, 4, 16, QChar('0'))),
                control.runFwdValue);
 
@@ -289,7 +289,7 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     if ((control.runRevValue < 0) || (control.runRevValue > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %s (%d)\n", KEY_RUN_REV,
+        printf("%s\t\t: %s (%d)\n", KEY_RUN_REV,
                qPrintable(QString("0x%1").arg(control.runRevValue, 4, 16, QChar('0'))),
                control.runRevValue);
 
@@ -304,7 +304,7 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     if ((control.stopValue < 0) || (control.stopValue > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %s (%d)\n", KEY_STOP,
+        printf("%s\t\t: %s (%d)\n", KEY_STOP,
                qPrintable(QString("0x%1").arg(control.stopValue, 4, 16, QChar('0'))),
                control.stopValue);
 
@@ -338,7 +338,7 @@ int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
     if ((spindle.address < 0) || (spindle.address > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %s (%d)\n", KEY_ADDRESS,
+        printf("%s\t\t\t: %s (%d)\n", KEY_ADDRESS,
                qPrintable(QString("0x%1").arg(spindle.address, 4, 16, QChar('0'))),
                spindle.address);
 
@@ -349,7 +349,7 @@ int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
     if (spindle.multiplier <= 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_MULTIPLIER, spindle.multiplier);
+        printf("%s\t\t: %d\n", KEY_MULTIPLIER, spindle.multiplier);
 
     /* Divider */
     spindle.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
@@ -358,7 +358,7 @@ int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
     if (spindle.divider <= 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %d\n", KEY_DIVIDER, spindle.divider);
+        printf("%s\t\t\t: %d\n", KEY_DIVIDER, spindle.divider);
 
     ini.endGroup();
     return 0;
@@ -390,7 +390,7 @@ int load_rpm_out_group(QSettings &ini, spindle_out_config_t &spindle)
     if ((spindle.address < 0) || (spindle.address > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %s (%d)\n", KEY_ADDRESS,
+        printf("%s\t\t\t: %s (%d)\n", KEY_ADDRESS,
                qPrintable(QString("0x%1").arg(spindle.address, 4, 16, QChar('0'))),
                spindle.address);
 
@@ -401,7 +401,7 @@ int load_rpm_out_group(QSettings &ini, spindle_out_config_t &spindle)
     if (spindle.multiplier <= 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_MULTIPLIER, spindle.multiplier);
+        printf("%s\t\t: %d\n", KEY_MULTIPLIER, spindle.multiplier);
 
     /* Divider */
     spindle.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
@@ -410,7 +410,7 @@ int load_rpm_out_group(QSettings &ini, spindle_out_config_t &spindle)
     if (spindle.divider <= 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %d\n", KEY_DIVIDER, spindle.divider);
+        printf("%s\t\t\t: %d\n", KEY_DIVIDER, spindle.divider);
 
     ini.endGroup();
     return 0;
@@ -446,7 +446,7 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
     if ((usrcfg.address < 0) || (usrcfg.address > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %s (%d)\n", KEY_ADDRESS,
+        printf("%s\t\t\t: %s (%d)\n", KEY_ADDRESS,
                qPrintable(QString("0x%1").arg(usrcfg.address, 4, 16, QChar('0'))),
                usrcfg.address);
 
@@ -457,7 +457,7 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
     if (usrcfg.multiplier <= 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %d\n", KEY_MULTIPLIER, usrcfg.multiplier);
+        printf("%s\t\t: %d\n", KEY_MULTIPLIER, usrcfg.multiplier);
 
     /* Divider */
     usrcfg.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
@@ -466,7 +466,7 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
     if (usrcfg.divider <= 0)
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %d\n", KEY_DIVIDER, usrcfg.divider);
+        printf("%s\t\t\t: %d\n", KEY_DIVIDER, usrcfg.divider);
 
     /* Pin type */
     value = ini.value(key = KEY_PIN_TYPE, "").toString().toLower();
@@ -483,14 +483,14 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
             && (value != "u32"))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %s\n", KEY_PIN_TYPE, qPrintable(value));
+        printf("%s\t\t\t: %s\n", KEY_PIN_TYPE, qPrintable(value));
 
     /* Pin name */
     usrcfg.pinName = ini.value(key = KEY_PIN_NAME, "").toString();
     if (usrcfg.pinName.isEmpty())
         goto fail_invalid_parameter;
     if (checkFlag)
-        printf("%s\t\t: %s\n", KEY_PIN_NAME, qPrintable(usrcfg.pinName));
+        printf("%s\t\t\t: %s\n", KEY_PIN_NAME, qPrintable(usrcfg.pinName));
 
     /* Append user parameter */
     uconfig.append(usrcfg);
