@@ -453,9 +453,9 @@ int main(int argc, char *argv[])
                     if (*hal_mdata->lastError == err) {
                         /* Close connection */
                         modbus_close(ctx);
-                        serialDeviceIsOpened = 0;
                         if (debugFlag)
-                            printf("\n%s: critical error detected, connection closed!\n", qPrintable(exeName));
+                            printf("\n%s: critical error detected, connection closed.\n", qPrintable(exeName));
+                        serialDeviceIsOpened = 0;
                         break;
                     }
                 }
@@ -469,22 +469,17 @@ int main(int argc, char *argv[])
                     if (*hal_mdata->lastError == err) {
                         /* Close connection */
                         modbus_close(ctx);
-                        serialDeviceIsOpened = 0;
                         if (debugFlag)
-                            printf("\n%s: critical error detected, connection closed!\n", qPrintable(exeName));
+                            printf("\n%s: critical error detected, connection closed.\n", qPrintable(exeName));
+                        serialDeviceIsOpened = 0;
                         break;
                     }
                 }
         }
 
-        /* Is Modbus connection established? */
-        if (okCounter >= mconfig.rs485.isConnectedDelay) {
-            *hal_mdata->isConnected = 1;
-            okCounter = mconfig.rs485.isConnectedDelay; // to avoid okCounter overflow
-        } else {
-            *hal_mdata->isConnected = 0;
-            /* If connection lost then also need to clear HAL output data */
-            /* Is this really necessary? I'm doubt... */
+        /* Should we clear HAL output data if any error has been occured? */
+        /* Is this really necessary? I'm doubt... Anyway let's do it. */
+        if (okCounter == 0) {
             *hal_mdata->spindleRpmOut = 0;
             *hal_mdata->atSpeed = 0;
             for (int i = 0; i < uconfig.count(); ++i) {
@@ -503,6 +498,13 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
+        /* Is Modbus connection established? */
+        if (okCounter >= mconfig.rs485.isConnectedDelay) {
+            *hal_mdata->isConnected = 1;
+            okCounter = mconfig.rs485.isConnectedDelay; // to avoid okCounter overflow
+        } else
+            *hal_mdata->isConnected = 0;
 
         /* At speed may be valid only when spindle is running */
         if (((0 != *hal_mdata->runReverse) || (0 != *hal_mdata->runForward)) &&
@@ -523,6 +525,10 @@ int main(int argc, char *argv[])
         if (!serialDeviceIsOpened) {
             /* Connection delay */
             delay_ms(mconfig.rs485.connectionDelay);
+
+            if (debugFlag)
+                printf("\n%s: connection attempt...\n", qPrintable(exeName));
+
             /* Open connection */
             if (modbus_connect(ctx) == -1) {
                 (*hal_mdata->errorCount)++;
