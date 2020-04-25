@@ -17,3 +17,15 @@ Latest build for Debian Wheezy & Stretch: [https://drive.google.com/drive/folder
 English: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
 
 Russian: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
+
+# History
+Vfdmod 0.3.0:
+- Reconnection feature added, it's useful when serial device has been re-attached.
+- Fault reset added.
+- Function codes 0x06 (write single register) and 0x10 (write multiple registers) are supported.
+
+Vfdmod 0.2.0:
+- PyVcp generator added.
+
+Vfdmod 0.1.0:
+- First release.
