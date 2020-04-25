@@ -149,9 +149,10 @@ fail:
 
 int write_registers(modbus_t *ctx, main_config_t &mconfig)
 {
+    int result = 0;
     uint16_t value;
 
-    /* Command speed */
+    /* Setting command speed */
     hal_float_t speed = abs(*hal_mdata->spindleRpmIn);
 
     if (speed < mconfig.common.minSpeedRpm)
@@ -162,17 +163,26 @@ int write_registers(modbus_t *ctx, main_config_t &mconfig)
 
     speed = speed * mconfig.rpmIn.multiplier / mconfig.rpmIn.divider;
 
+    value = int(speed);
     if (debugFlag)
-        printf("\n%s: setting command speed value to %d (0x%04X)...\n", qPrintable(exeName), int(speed), int(speed));
+        printf("\n%s: setting command speed value to %d (0x%04X)...\n", qPrintable(exeName), value, value);
 
     protocol_delay(mconfig.rs485);
-    //    if (1 != modbus_write_registers(ctx, mconfig.rpmIn.address, 1, &value))
-    if (1 != modbus_write_register(ctx, mconfig.rpmIn.address, int(speed)))
+
+    // Function code 0x06
+    if (mconfig.rpmIn.functionCode == MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
+        result = modbus_write_register(ctx, mconfig.rpmIn.address, value);
+
+    // Function code 0x10
+    if (mconfig.rpmIn.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS)
+        result = modbus_write_registers(ctx, mconfig.rpmIn.address, 1, &value);
+
+    if (result != 1)
         goto fail;
     else
         okCounter++;
 
-    /* Control value */
+    /* Setting control word value */
     value = mconfig.control.stopValue;
 
     if (0 != *hal_mdata->runReverse)
@@ -181,15 +191,30 @@ int write_registers(modbus_t *ctx, main_config_t &mconfig)
     if (0 != *hal_mdata->runForward)
         value = mconfig.control.runFwdValue;
 
+    if (0 != *hal_mdata->faultReset)
+        value = mconfig.control.faultResetValue;
+
     if (debugFlag)
         printf("\n%s: setting control word value to %d (0x%04X)...\n", qPrintable(exeName), value, value);
 
     protocol_delay(mconfig.rs485);
-    //    if (1 != modbus_write_registers(ctx, mconfig.control.address, 1, &value))
-    if (1 != modbus_write_register(ctx, mconfig.control.address, value))
+
+    // Function code 0x06
+    if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
+        result = modbus_write_register(ctx, mconfig.control.address, value);
+
+    // Function code 0x10
+    if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS)
+        result = modbus_write_registers(ctx, mconfig.control.address, 1, &value);
+
+    if (result != 1)
         goto fail;
     else
         okCounter++;
+
+    // If fault reset has been written successfully then inactive it's input
+    if (value == mconfig.control.faultResetValue)
+        *hal_mdata->faultReset = 0;
 
     return 0;
 fail:
@@ -345,15 +370,21 @@ int main(int argc, char *argv[])
                               HAL_PIN_AT_SPEED))
         goto fail;
 
+    if (0 != hal_pin_bit_newf(HAL_IN, &(hal_mdata->faultReset), hal_comp_id, "%s.%s.%s",
+                              qPrintable(mconfig.common.componentName),
+                              HAL_GROUP_CONTROL,
+                              HAL_PIN_FAULT_RESET))
+        goto fail;
+
     if (0 != hal_pin_bit_newf(HAL_IN, &(hal_mdata->runForward), hal_comp_id, "%s.%s.%s",
                               qPrintable(mconfig.common.componentName),
-                              HAL_GROUP_SPINDLE,
+                              HAL_GROUP_CONTROL,
                               HAL_PIN_RUN_FORWARD))
         goto fail;
 
     if (0 != hal_pin_bit_newf(HAL_IN, &(hal_mdata->runReverse), hal_comp_id, "%s.%s.%s",
                               qPrintable(mconfig.common.componentName),
-                              HAL_GROUP_SPINDLE,
+                              HAL_GROUP_CONTROL,
                               HAL_PIN_RUN_REVERSE))
         goto fail;
 

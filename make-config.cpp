@@ -99,9 +99,7 @@ void make_postgui_config(const main_config_t &mconfig, const QVector<user_config
            PYVCP,
            HAL_PIN_ERROR_COUNT);
 
-    printf("net %s-%s %s.%s.%s => %s.%s\n"
-           "\n"
-           "# User parameters\n",
+    printf("net %s-%s %s.%s.%s => %s.%s\n",
            PYVCP,
            HAL_PIN_LAST_ERROR,
            qPrintable(mconfig.common.componentName),
@@ -109,6 +107,20 @@ void make_postgui_config(const main_config_t &mconfig, const QVector<user_config
            HAL_PIN_LAST_ERROR,
            PYVCP,
            HAL_PIN_LAST_ERROR);
+
+    printf("\n"
+           "# Fault reset\n"
+           "net %s-%s %s.%s.%s <= %s.%s\n",
+           PYVCP,
+           HAL_PIN_FAULT_RESET,
+           qPrintable(mconfig.common.componentName),
+           HAL_GROUP_CONTROL,
+           HAL_PIN_FAULT_RESET,
+           PYVCP,
+           HAL_PIN_FAULT_RESET);
+
+    printf("\n"
+           "# User parameters\n");
 
     for (int i = 0; i < uconfig.size(); i++) {
         printf("net %s-%s %s.%s.%s => %s.%s\n",
@@ -172,7 +184,16 @@ void make_pyvcp_config(const QString &inifile, const main_config_t &mconfig, con
            HAL_PIN_LAST_ERROR);
 
     printf("    </table>\n"
-           "\n"
-           "</labelframe>\n"
+           "\n");
+
+    if (mconfig.control.faultResetValue != mconfig.control.stopValue)
+        printf("    <button>\n"
+               "        <halpin>\"%s\"</halpin>\n"
+               "        <text>\"FAULT RESET\"</text>\n"
+               "    </button>\n"
+               "\n",
+               HAL_PIN_FAULT_RESET);
+
+    printf("</labelframe>\n"
            "</pyvcp>\n");
 }

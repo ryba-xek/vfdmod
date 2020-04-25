@@ -40,6 +40,7 @@
 #define KEY_RUN_FWD                 "RunForwardValue"
 #define KEY_RUN_REV                 "RunReverseValue"
 #define KEY_STOP                    "StopValue"
+#define KEY_FAULT_RESET             "FaultResetValue"
 
 /* Spindle RPM-in group */
 #define GROUP_SPINDLE_IN            "SpindleRpmIn"
@@ -52,6 +53,7 @@
 #define KEY_PIN_NAME                "PinName"
 
 /* Common keys & values */
+#define KEY_FUNCTION_CODE           "FunctionCode"
 #define KEY_ADDRESS                 "Address"
 #define KEY_DIVIDER                 "Divider"
 #define KEY_MULTIPLIER              "Multiplier"
@@ -62,9 +64,11 @@
 #define HAL_GROUP_RS485             "rs485"
 #define HAL_GROUP_USER_PARAMETERS   "parameters"
 #define HAL_GROUP_SPINDLE           "spindle"
+#define HAL_GROUP_CONTROL           "control"
 #define HAL_PIN_AT_SPEED            "at-speed"
 #define HAL_PIN_RPM_IN              "rpm-in"
 #define HAL_PIN_RPM_OUT             "rpm-out"
+#define HAL_PIN_FAULT_RESET         "fault-reset"
 #define HAL_PIN_RUN_FORWARD         "run-forward"
 #define HAL_PIN_RUN_REVERSE         "run-reverse"
 #define HAL_PIN_IS_CONNECTED        "is-connected"

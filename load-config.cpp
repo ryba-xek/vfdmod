@@ -248,6 +248,22 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     if (checkFlag)
         printf("\n[%s]\n", qPrintable(GROUP_CONTROL));
 
+    /* Function code */
+    value = ini.value(key = KEY_FUNCTION_CODE, QString("%1").arg(MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)).toString();
+    if (value.toLower().startsWith("0x"))
+        control.functionCode = hex_to_int(value, &ok);
+    else
+        control.functionCode = value.toInt(&ok);
+    if (!ok)
+        goto fail_invalid_parameter;
+
+    if ((control.functionCode != MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
+            && (control.functionCode != MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS))
+        goto fail_out_of_range;
+
+    if (checkFlag)
+        printf("%s\t\t: 0x%02X (%d)\n", KEY_FUNCTION_CODE, control.functionCode, control.functionCode);
+
     /* Address */
     value = ini.value(key = KEY_ADDRESS, "").toString();
     if (value.toLower().startsWith("0x"))
@@ -259,9 +275,7 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     if ((control.address < 0) || (control.address > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t\t: %s (%d)\n", KEY_ADDRESS,
-               qPrintable(QString("0x%1").arg(control.address, 4, 16, QChar('0'))),
-               control.address);
+        printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, control.address, control.address);
 
     /* Run forward value */
     value = ini.value(key = KEY_RUN_FWD, "").toString();
@@ -274,9 +288,7 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     if ((control.runFwdValue < 0) || (control.runFwdValue > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %s (%d)\n", KEY_RUN_FWD,
-               qPrintable(QString("0x%1").arg(control.runFwdValue, 4, 16, QChar('0'))),
-               control.runFwdValue);
+        printf("%s\t\t: 0x%04X (%d)\n", KEY_RUN_FWD, control.runFwdValue, control.runFwdValue);
 
     /* Run reverse value */
     value = ini.value(key = KEY_RUN_REV, "").toString();
@@ -289,9 +301,7 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     if ((control.runRevValue < 0) || (control.runRevValue > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %s (%d)\n", KEY_RUN_REV,
-               qPrintable(QString("0x%1").arg(control.runRevValue, 4, 16, QChar('0'))),
-               control.runRevValue);
+        printf("%s\t\t: 0x%04X (%d)\n", KEY_RUN_REV, control.runRevValue, control.runRevValue);
 
     /* Stop value */
     value = ini.value(key = KEY_STOP, "").toString();
@@ -304,9 +314,20 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     if ((control.stopValue < 0) || (control.stopValue > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t: %s (%d)\n", KEY_STOP,
-               qPrintable(QString("0x%1").arg(control.stopValue, 4, 16, QChar('0'))),
-               control.stopValue);
+        printf("%s\t\t: 0x%04X (%d)\n", KEY_STOP, control.stopValue, control.stopValue);
+
+    /* Fault reset value */
+    value = ini.value(key = KEY_FAULT_RESET, QString("%1").arg(control.stopValue)).toString();
+    if (value.toLower().startsWith("0x"))
+        control.faultResetValue = hex_to_int(value, &ok);
+    else
+        control.faultResetValue = value.toInt(&ok);
+    if (!ok)
+        goto fail_invalid_parameter;
+    if ((control.faultResetValue < 0) || (control.faultResetValue > 0xFFFF))
+        goto fail_out_of_range;
+    if (checkFlag)
+        printf("%s\t\t: 0x%04X (%d)\n", KEY_FAULT_RESET, control.faultResetValue, control.faultResetValue);
 
     ini.endGroup();
     return 0;
@@ -327,6 +348,22 @@ int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
     if (checkFlag)
         printf("\n[%s]\n", qPrintable(GROUP_SPINDLE_IN));
 
+    /* Function code */
+    value = ini.value(key = KEY_FUNCTION_CODE, QString("%1").arg(MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)).toString();
+    if (value.toLower().startsWith("0x"))
+        spindle.functionCode = hex_to_int(value, &ok);
+    else
+        spindle.functionCode = value.toInt(&ok);
+    if (!ok)
+        goto fail_invalid_parameter;
+
+    if ((spindle.functionCode != MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
+            && (spindle.functionCode != MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS))
+        goto fail_out_of_range;
+
+    if (checkFlag)
+        printf("%s\t\t: 0x%02X (%d)\n", KEY_FUNCTION_CODE, spindle.functionCode, spindle.functionCode);
+
     /* Address */
     value = ini.value(key = KEY_ADDRESS, "").toString();
     if (value.toLower().startsWith("0x"))
@@ -338,9 +375,7 @@ int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
     if ((spindle.address < 0) || (spindle.address > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t\t: %s (%d)\n", KEY_ADDRESS,
-               qPrintable(QString("0x%1").arg(spindle.address, 4, 16, QChar('0'))),
-               spindle.address);
+        printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, spindle.address, spindle.address);
 
     /* Multiplier */
     spindle.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);
@@ -390,9 +425,7 @@ int load_rpm_out_group(QSettings &ini, spindle_out_config_t &spindle)
     if ((spindle.address < 0) || (spindle.address > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t\t: %s (%d)\n", KEY_ADDRESS,
-               qPrintable(QString("0x%1").arg(spindle.address, 4, 16, QChar('0'))),
-               spindle.address);
+        printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, spindle.address, spindle.address);
 
     /* Multiplier */
     spindle.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);
@@ -446,9 +479,7 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
     if ((usrcfg.address < 0) || (usrcfg.address > 0xFFFF))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t\t\t: %s (%d)\n", KEY_ADDRESS,
-               qPrintable(QString("0x%1").arg(usrcfg.address, 4, 16, QChar('0'))),
-               usrcfg.address);
+        printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, usrcfg.address, usrcfg.address);
 
     /* Multiplier */
     usrcfg.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);

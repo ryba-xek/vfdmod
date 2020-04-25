@@ -7,6 +7,11 @@
 #include <hal.h>
 #include <QVector>
 
+#define MODBUS_FUNC_WRITE_SINGLE_COIL                   0x05
+#define MODBUS_FUNC_WRITE_MULTIPLE_COILS                0x0F
+#define MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER       0x06
+#define MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS    0x10
+
 /*** INI STRUCTURES ***/
 
 /* Common settings */
@@ -41,14 +46,17 @@ typedef struct {
 
 /* Spindle control settings */
 typedef struct {
+    int functionCode;
     int address;
     int runFwdValue;
     int runRevValue;
     int stopValue;
+    int faultResetValue;
 } control_config_t;
 
 /* Spindle IN settings */
 typedef struct {
+    int functionCode;
     int address;
     int multiplier;
     int divider;
@@ -92,6 +100,7 @@ typedef struct {
     /* Spindle control pins */
     hal_bit_t   *runForward;
     hal_bit_t   *runReverse;
+    hal_bit_t   *faultReset;
     hal_bit_t   *atSpeed;
     hal_float_t *spindleRpmIn;
     hal_float_t *spindleRpmOut;
