@@ -37,10 +37,15 @@
 
 /* Spindle control group */
 #define GROUP_CONTROL               "Control"
+// valid for function codes 0x06 & 0x10
 #define KEY_RUN_FWD                 "RunForwardValue"
 #define KEY_RUN_REV                 "RunReverseValue"
 #define KEY_STOP                    "StopValue"
 #define KEY_FAULT_RESET             "FaultResetValue"
+// valid for function codes 0x05 & 0x0F
+#define KEY_RUN_COIL                "RunCoil"
+#define KEY_DIRECTION_COIL          "DirectionCoil"
+#define KEY_FAULT_RESET_COIL        "FaultResetCoil"
 
 /* Spindle RPM-in group */
 #define GROUP_SPINDLE_IN            "SpindleRpmIn"
@@ -77,5 +82,14 @@
 
 /* Default PyVcp name to make postgui HAL file */
 #define PYVCP                       "pyvcp"
+
+
+/* MODBUS */
+
+/* Function codes */
+#define MODBUS_FUNC_WRITE_SINGLE_COIL                   0x05
+#define MODBUS_FUNC_WRITE_MULTIPLE_COILS                0x0F
+#define MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER       0x06
+#define MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS    0x10
 
 #endif // DEFAULTVALUES_H

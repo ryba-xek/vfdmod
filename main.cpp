@@ -182,39 +182,92 @@ int write_registers(modbus_t *ctx, main_config_t &mconfig)
     else
         okCounter++;
 
-    /* Setting control word value */
-    value = mconfig.control.stopValue;
 
-    if (0 != *hal_mdata->runReverse)
-        value = mconfig.control.runRevValue;
+    /* Setting control word value for function codes 0x06 & 0x10 */
+    if ((mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
+            || (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS)) {
 
-    if (0 != *hal_mdata->runForward)
-        value = mconfig.control.runFwdValue;
+        value = mconfig.control.stopValue;
 
-    if (0 != *hal_mdata->faultReset)
-        value = mconfig.control.faultResetValue;
+        if (0 != *hal_mdata->runReverse)
+            value = mconfig.control.runRevValue;
 
-    if (debugFlag)
-        printf("\n%s: setting control word value to %d (0x%04X)...\n", qPrintable(exeName), value, value);
+        if (0 != *hal_mdata->runForward)
+            value = mconfig.control.runFwdValue;
 
-    protocol_delay(mconfig.rs485);
+        if (0 != *hal_mdata->faultReset)
+            value = mconfig.control.faultResetValue;
 
-    // Function code 0x06
-    if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
-        result = modbus_write_register(ctx, mconfig.control.address, value);
+        if (debugFlag)
+            printf("\n%s: setting control word value to %d (0x%04X)...\n", qPrintable(exeName), value, value);
 
-    // Function code 0x10
-    if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS)
-        result = modbus_write_registers(ctx, mconfig.control.address, 1, &value);
+        protocol_delay(mconfig.rs485);
 
-    if (result != 1)
-        goto fail;
-    else
-        okCounter++;
+        if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
+            result = modbus_write_register(ctx, mconfig.control.address, value);
 
-    // If fault reset has been written successfully then inactive it's input
-    if (value == mconfig.control.faultResetValue)
-        *hal_mdata->faultReset = 0;
+        if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS)
+            result = modbus_write_registers(ctx, mconfig.control.address, 1, &value);
+
+        if (result != 1)
+            goto fail;
+        else
+            okCounter++;
+
+        // If fault reset has been written successfully then inactive it's input
+        if (value == mconfig.control.faultResetValue)
+            *hal_mdata->faultReset = 0;
+
+    }
+
+    // Setting coils for function code 0x05
+    if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_COIL) {
+
+        // Direction coil
+        if (debugFlag)
+            printf("\n%s: setting direction coil...\n", qPrintable(exeName));
+
+        protocol_delay(mconfig.rs485);
+        result = modbus_write_bit(ctx,
+                                  mconfig.control.directionCoil,
+                                  *hal_mdata->runReverse != 0 ? 1 : 0);
+        if (result != 1)
+            goto fail;
+        else
+            okCounter++;
+
+        // Run coil
+        if (debugFlag)
+            printf("\n%s: setting run coil...\n", qPrintable(exeName));
+
+        protocol_delay(mconfig.rs485);
+        result = modbus_write_bit(ctx,
+                                  mconfig.control.runCoil,
+                                  ((*hal_mdata->runForward != 0) || (*hal_mdata->runReverse != 0)) ? 1 : 0);
+
+        if (result != 1)
+            goto fail;
+        else
+            okCounter++;
+
+        // Fault reset coil
+        if (*hal_mdata->faultReset != 0) {
+            if (debugFlag)
+                printf("\n%s: setting fault reset coil...\n", qPrintable(exeName));
+
+            protocol_delay(mconfig.rs485);
+            result = modbus_write_bit(ctx, mconfig.control.faultResetCoil, 1);
+
+            if (result != 1)
+                goto fail;
+            else
+                okCounter++;
+
+            // If fault reset has been written successfully then inactive it's input
+            *hal_mdata->faultReset = 0;
+        }
+
+    }
 
     return 0;
 fail:
