@@ -205,19 +205,15 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
             rs485.criticalErrors.append(e);
     }
 
-    if (checkFlag) {
-        if (!rs485.criticalErrors.isEmpty()) {
-            printf("%s\t: ", KEY_CONNECTION_ERRORS);
-            for (int i = 0; i < rs485.criticalErrors.count(); i++) {
-                if (i != rs485.criticalErrors.count() - 1)
-                    printf("%d, ", rs485.criticalErrors.at(i));
-                else
-                    printf("%d ", rs485.criticalErrors.at(i));
-            }
-            printf("(auto reconnection mode ENABLED)\n");
+    if (checkFlag && !rs485.criticalErrors.isEmpty()) {
+        printf("%s\t: ", KEY_CONNECTION_ERRORS);
+        for (int i = 0; i < rs485.criticalErrors.count(); i++) {
+            if (i != rs485.criticalErrors.count() - 1)
+                printf("%d, ", rs485.criticalErrors.at(i));
+            else
+                printf("%d ", rs485.criticalErrors.at(i));
         }
-        else
-            printf("%s\t: (auto reconnection mode DISABLED)\n", KEY_CONNECTION_ERRORS);
+        printf("\n");
     }
 
     /* Connection delay */
@@ -226,7 +222,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
         goto fail_invalid_parameter;
     if ((rs485.connectionDelay < 0) || (rs485.connectionDelay > 10000))
         goto fail_out_of_range;
-    if (checkFlag)
+    if (checkFlag && !rs485.criticalErrors.isEmpty())
         printf("%s\t\t: %d\n", KEY_CONNECTION_DELAY, rs485.connectionDelay);
 
     ini.endGroup();
@@ -258,76 +254,131 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
         goto fail_invalid_parameter;
 
     if ((control.functionCode != MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
-            && (control.functionCode != MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS))
+            && (control.functionCode != MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS)
+            && (control.functionCode != MODBUS_FUNC_WRITE_SINGLE_COIL)
+            && (control.functionCode != MODBUS_FUNC_WRITE_MULTIPLE_COILS))
         goto fail_out_of_range;
 
     if (checkFlag)
         printf("%s\t\t: 0x%02X (%d)\n", KEY_FUNCTION_CODE, control.functionCode, control.functionCode);
 
-    /* Address */
-    value = ini.value(key = KEY_ADDRESS, "").toString();
-    if (value.toLower().startsWith("0x"))
-        control.address = hex_to_int(value, &ok);
-    else
-        control.address = value.toInt(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if ((control.address < 0) || (control.address > 0xFFFF))
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, control.address, control.address);
+    /* LOADING PARAMETERS FOR FUNCTION CODES 0x06 AND 0x10 */
+    if ((control.functionCode == MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
+            || (control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS)) {
 
-    /* Run forward value */
-    value = ini.value(key = KEY_RUN_FWD, "").toString();
-    if (value.toLower().startsWith("0x"))
-        control.runFwdValue = hex_to_int(value, &ok);
-    else
-        control.runFwdValue = value.toInt(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if ((control.runFwdValue < 0) || (control.runFwdValue > 0xFFFF))
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t\t: 0x%04X (%d)\n", KEY_RUN_FWD, control.runFwdValue, control.runFwdValue);
+        /* Address */
+        value = ini.value(key = KEY_ADDRESS, "").toString();
+        if (value.toLower().startsWith("0x"))
+            control.address = hex_to_int(value, &ok);
+        else
+            control.address = value.toInt(&ok);
+        if (!ok)
+            goto fail_invalid_parameter;
+        if ((control.address < 0) || (control.address > 0xFFFF))
+            goto fail_out_of_range;
+        if (checkFlag)
+            printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, control.address, control.address);
 
-    /* Run reverse value */
-    value = ini.value(key = KEY_RUN_REV, "").toString();
-    if (value.toLower().startsWith("0x"))
-        control.runRevValue = hex_to_int(value, &ok);
-    else
-        control.runRevValue = value.toInt(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if ((control.runRevValue < 0) || (control.runRevValue > 0xFFFF))
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t\t: 0x%04X (%d)\n", KEY_RUN_REV, control.runRevValue, control.runRevValue);
+        /* Run forward value */
+        value = ini.value(key = KEY_RUN_FWD, "").toString();
+        if (value.toLower().startsWith("0x"))
+            control.runFwdValue = hex_to_int(value, &ok);
+        else
+            control.runFwdValue = value.toInt(&ok);
+        if (!ok)
+            goto fail_invalid_parameter;
+        if ((control.runFwdValue < 0) || (control.runFwdValue > 0xFFFF))
+            goto fail_out_of_range;
+        if (checkFlag)
+            printf("%s\t\t: 0x%04X (%d)\n", KEY_RUN_FWD, control.runFwdValue, control.runFwdValue);
 
-    /* Stop value */
-    value = ini.value(key = KEY_STOP, "").toString();
-    if (value.toLower().startsWith("0x"))
-        control.stopValue = hex_to_int(value, &ok);
-    else
-        control.stopValue = value.toInt(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if ((control.stopValue < 0) || (control.stopValue > 0xFFFF))
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t\t: 0x%04X (%d)\n", KEY_STOP, control.stopValue, control.stopValue);
+        /* Run reverse value */
+        value = ini.value(key = KEY_RUN_REV, "").toString();
+        if (value.toLower().startsWith("0x"))
+            control.runRevValue = hex_to_int(value, &ok);
+        else
+            control.runRevValue = value.toInt(&ok);
+        if (!ok)
+            goto fail_invalid_parameter;
+        if ((control.runRevValue < 0) || (control.runRevValue > 0xFFFF))
+            goto fail_out_of_range;
+        if (checkFlag)
+            printf("%s\t\t: 0x%04X (%d)\n", KEY_RUN_REV, control.runRevValue, control.runRevValue);
 
-    /* Fault reset value */
-    value = ini.value(key = KEY_FAULT_RESET, QString("%1").arg(control.stopValue)).toString();
-    if (value.toLower().startsWith("0x"))
-        control.faultResetValue = hex_to_int(value, &ok);
-    else
-        control.faultResetValue = value.toInt(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if ((control.faultResetValue < 0) || (control.faultResetValue > 0xFFFF))
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t\t: 0x%04X (%d)\n", KEY_FAULT_RESET, control.faultResetValue, control.faultResetValue);
+        /* Fault reset value */
+        value = ini.value(key = KEY_FAULT_RESET, QString("%1").arg(INACTIVE_FLAG)).toString();
+        if (value.toLower().startsWith("0x"))
+            control.faultResetValue = hex_to_int(value, &ok);
+        else
+            control.faultResetValue = value.toInt(&ok);
+        if (!ok)
+            goto fail_invalid_parameter;
+        if (((control.faultResetValue < 0) || (control.faultResetValue > 0xFFFF))
+                && (control.faultResetValue != INACTIVE_FLAG))
+            goto fail_out_of_range;
+        if ((checkFlag) && (control.faultResetValue != INACTIVE_FLAG))
+            printf("%s\t\t: 0x%04X (%d)\n", KEY_FAULT_RESET, control.faultResetValue, control.faultResetValue);
+
+        /* Stop value */
+        value = ini.value(key = KEY_STOP, "").toString();
+        if (value.toLower().startsWith("0x"))
+            control.stopValue = hex_to_int(value, &ok);
+        else
+            control.stopValue = value.toInt(&ok);
+        if (!ok)
+            goto fail_invalid_parameter;
+        if ((control.stopValue < 0) || (control.stopValue > 0xFFFF))
+            goto fail_out_of_range;
+        if (checkFlag)
+            printf("%s\t\t: 0x%04X (%d)\n", KEY_STOP, control.stopValue, control.stopValue);
+
+    }
+
+    /* LOADING PARAMETERS FOR FUNCTION CODES 0x05 AND 0x0F */
+    if ((control.functionCode == MODBUS_FUNC_WRITE_SINGLE_COIL)
+            || (control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_COILS)) {
+
+        /* Run coil */
+        value = ini.value(key = KEY_RUN_COIL, "").toString();
+        if (value.toLower().startsWith("0x"))
+            control.runCoil = hex_to_int(value, &ok);
+        else
+            control.runCoil = value.toInt(&ok);
+        if (!ok)
+            goto fail_invalid_parameter;
+        if ((control.runCoil < 0) || (control.runCoil > 0xFFFF))
+            goto fail_out_of_range;
+        if (checkFlag)
+            printf("%s\t\t\t: 0x%04X (%d)\n", KEY_RUN_COIL, control.runCoil, control.runCoil);
+
+        /* Direction coil */
+        value = ini.value(key = KEY_DIRECTION_COIL, "").toString();
+        if (value.toLower().startsWith("0x"))
+            control.directionCoil = hex_to_int(value, &ok);
+        else
+            control.directionCoil = value.toInt(&ok);
+        if (!ok)
+            goto fail_invalid_parameter;
+        if ((control.directionCoil < 0) || (control.directionCoil > 0xFFFF))
+            goto fail_out_of_range;
+        if (checkFlag)
+            printf("%s\t\t: 0x%04X (%d)\n", KEY_DIRECTION_COIL, control.directionCoil, control.directionCoil);
+
+        /* Fault reset coil */
+        value = ini.value(key = KEY_FAULT_RESET_COIL, QString("%1").arg(INACTIVE_FLAG)).toString();
+        if (value.toLower().startsWith("0x"))
+            control.faultResetCoil = hex_to_int(value, &ok);
+        else
+            control.faultResetCoil = value.toInt(&ok);
+        if (!ok)
+            goto fail_invalid_parameter;
+        if (((control.faultResetCoil < 0) || (control.faultResetCoil > 0xFFFF))
+                && (control.faultResetCoil != INACTIVE_FLAG))
+            goto fail_out_of_range;
+        if ((checkFlag) && (control.faultResetCoil != INACTIVE_FLAG))
+            printf("%s\t\t: 0x%04X (%d)\n", KEY_FAULT_RESET_COIL, control.faultResetCoil, control.faultResetCoil);
+
+    }
 
     ini.endGroup();
     return 0;

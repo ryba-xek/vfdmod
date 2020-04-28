@@ -87,7 +87,7 @@ void closeRequest(int param) {
     printf("%s: close request received.\n", qPrintable(exeName));
 }
 
-int read_registers(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t> &uconfig)
+int read_modbus_data(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_t> &uconfig)
 {
     uint16_t value;
 
@@ -147,7 +147,7 @@ fail:
     return -1;
 }
 
-int write_registers(modbus_t *ctx, main_config_t &mconfig)
+int write_modbus_data(modbus_t *ctx, main_config_t &mconfig)
 {
     int result = 0;
     uint16_t value;
@@ -195,7 +195,8 @@ int write_registers(modbus_t *ctx, main_config_t &mconfig)
         if (0 != *hal_mdata->runForward)
             value = mconfig.control.runFwdValue;
 
-        if (0 != *hal_mdata->faultReset)
+        if ((0 != *hal_mdata->faultReset)
+                && (mconfig.control.faultResetValue != INACTIVE_FLAG))
             value = mconfig.control.faultResetValue;
 
         if (debugFlag)
@@ -220,30 +221,48 @@ int write_registers(modbus_t *ctx, main_config_t &mconfig)
 
     }
 
-    // Setting coils for function code 0x05
-    if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_COIL) {
+    // Setting coils for function codes 0x05 & 0x0F
+    if ((mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_COIL)
+            || (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_COILS)) {
+
+        uint8_t bit_value = 0;
 
         // Direction coil
+        bit_value = *hal_mdata->runReverse != 0 ? 1 : 0;
+
         if (debugFlag)
-            printf("\n%s: setting direction coil...\n", qPrintable(exeName));
+            printf("\n%s: setting direction coil to %s...\n",
+                   qPrintable(exeName),
+                   bit_value != 0 ? "TRUE" : "FALSE");
 
         protocol_delay(mconfig.rs485);
-        result = modbus_write_bit(ctx,
-                                  mconfig.control.directionCoil,
-                                  *hal_mdata->runReverse != 0 ? 1 : 0);
+
+        if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_COIL)
+            result = modbus_write_bit(ctx, mconfig.control.directionCoil, bit_value);
+
+        if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_COILS)
+            result = modbus_write_bits(ctx, mconfig.control.directionCoil, 1, &bit_value);
+
         if (result != 1)
             goto fail;
         else
             okCounter++;
 
         // Run coil
+        bit_value = ((*hal_mdata->runForward != 0) || (*hal_mdata->runReverse != 0)) ? 1 : 0;
+
         if (debugFlag)
-            printf("\n%s: setting run coil...\n", qPrintable(exeName));
+            printf("\n%s: setting run coil to %s...\n",
+                   qPrintable(exeName),
+                   bit_value != 0 ? "TRUE" : "FALSE");
 
         protocol_delay(mconfig.rs485);
-        result = modbus_write_bit(ctx,
-                                  mconfig.control.runCoil,
-                                  ((*hal_mdata->runForward != 0) || (*hal_mdata->runReverse != 0)) ? 1 : 0);
+
+        if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_COIL)
+            result = modbus_write_bit(ctx, mconfig.control.runCoil, bit_value);
+
+        if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_COILS)
+            result = modbus_write_bits(ctx, mconfig.control.runCoil, 1, &bit_value);
 
         if (result != 1)
             goto fail;
@@ -251,12 +270,23 @@ int write_registers(modbus_t *ctx, main_config_t &mconfig)
             okCounter++;
 
         // Fault reset coil
-        if (*hal_mdata->faultReset != 0) {
+        if ((*hal_mdata->faultReset != 0)
+                && (mconfig.control.faultResetCoil != INACTIVE_FLAG)) {
+
+            bit_value = 1;
+
             if (debugFlag)
-                printf("\n%s: setting fault reset coil...\n", qPrintable(exeName));
+                printf("\n%s: setting fault reset coil to %s...\n",
+                       qPrintable(exeName),
+                       bit_value != 0 ? "TRUE" : "FALSE");
 
             protocol_delay(mconfig.rs485);
-            result = modbus_write_bit(ctx, mconfig.control.faultResetCoil, 1);
+
+            if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_COIL)
+                result = modbus_write_bit(ctx, mconfig.control.faultResetCoil, bit_value);
+
+            if (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_COILS)
+                result = modbus_write_bits(ctx, mconfig.control.faultResetCoil, 1, &bit_value);
 
             if (result != 1)
                 goto fail;
@@ -531,7 +561,7 @@ int main(int argc, char *argv[])
 
         /* Reading modbus data */
         if (serialDeviceIsOpened) {
-            if (read_registers(ctx, mconfig, uconfig) < 0)
+            if (read_modbus_data(ctx, mconfig, uconfig) < 0)
                 /* Is last error code means connection lost? */
                 foreach (int err, mconfig.rs485.criticalErrors) {
                     if (*hal_mdata->lastError == err) {
@@ -547,7 +577,7 @@ int main(int argc, char *argv[])
 
         /* Writing modbus data */
         if (serialDeviceIsOpened) {
-            if (write_registers(ctx, mconfig) < 0)
+            if (write_modbus_data(ctx, mconfig) < 0)
                 /* Is last error code means connection lost? */
                 foreach (int err, mconfig.rs485.criticalErrors) {
                     if (*hal_mdata->lastError == err) {

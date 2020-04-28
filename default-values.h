@@ -92,4 +92,6 @@
 #define MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER       0x06
 #define MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS    0x10
 
+#define INACTIVE_FLAG                                   0x1FFFF
+
 #endif // DEFAULTVALUES_H
