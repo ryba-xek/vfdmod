@@ -34,12 +34,12 @@ void make_pyvcp_config(const QString &inifile, const main_config_t &mconfig, con
 
 void print_help()
 {
-    printf("Usage:\n"
+    printf("\nUsage:\n"
            "\t%s [--debug] [--check|--postgui|--pyvcp] CONFIGFILE\n"
            "\t%s --new\n",
            qPrintable(exeName),
            qPrintable(exeName));
-    printf("Keys:\n"
+    printf("\nKeys:\n"
            "\t-c, --check\tCheck config file for errors.\n"
            "\t-d, --debug\tEnable debug mode.\n"
            "\t-h, --help\tPrint this help.\n"
@@ -48,9 +48,9 @@ void print_help()
            "\t-V, --pyvcp\tMake PyVcp XML file from existing config file.\n"
            "\t-v, --version\tPrint program's version.\n"
            "\tCONFIGFILE\tPlain text INI file.\n");
-    printf("Description:\n"
+    printf("\nDescription:\n"
            "\tBlah-blah and blah-blah-blah...\n");
-    printf("Examples:\n"
+    printf("\nExamples:\n"
            "\t%s --new > config.ini\n"
            "\t%s --check config.ini\n"
            "\t%s --postgui config.ini > postgui.hal\n"

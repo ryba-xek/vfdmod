@@ -22,7 +22,7 @@
 #define KEY_LOOP_DELAY              "LoopDelay"
 #define KEY_PROTOCOL_DELAY          "ProtocolDelay"
 #define KEY_IS_CONNECTED_DELAY      "IsConnectedDelay"
-#define KEY_CONNECTION_ERRORS       "ConnectionErrors"
+#define KEY_CONNECTION_ERROR_LIST   "ConnectionErrorList"
 #define KEY_CONNECTION_DELAY        "ConnectionDelay"
 #define VALUE_SLAVE_ADDRESS         "1"
 #define VALUE_SERIAL_DEVICE         "/dev/ttyS0"

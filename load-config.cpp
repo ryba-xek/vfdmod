@@ -188,7 +188,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
         printf("%s\t: %d\n", KEY_IS_CONNECTED_DELAY, rs485.isConnectedDelay);
 
     /* Connection errors */
-    errors = ini.value(key = KEY_CONNECTION_ERRORS, "").toStringList();
+    errors = ini.value(key = KEY_CONNECTION_ERROR_LIST, "").toStringList();
     foreach (QString error, errors) {
         if (error.isEmpty())
             continue;
@@ -206,7 +206,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
     }
 
     if (checkFlag && !rs485.criticalErrors.isEmpty()) {
-        printf("%s\t: ", KEY_CONNECTION_ERRORS);
+        printf("%s\t: ", KEY_CONNECTION_ERROR_LIST);
         for (int i = 0; i < rs485.criticalErrors.count(); i++) {
             if (i != rs485.criticalErrors.count() - 1)
                 printf("%d, ", rs485.criticalErrors.at(i));

@@ -186,7 +186,16 @@ void make_pyvcp_config(const QString &inifile, const main_config_t &mconfig, con
     printf("    </table>\n"
            "\n");
 
-    if (mconfig.control.faultResetValue != mconfig.control.stopValue)
+    /* FAULT RESET BUTTON */
+    // If function code is (0x06 or 0x10) and fault reset value is active...
+    // ... OR ...
+    // If function code is (0x05 or 0x0F) and fault reset coil is active...
+    if ((((mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
+            || (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS))
+            && (mconfig.control.faultResetValue != INACTIVE_FLAG))
+            || (((mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_COIL)
+                 || (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_COILS))
+                 && (mconfig.control.faultResetCoil != INACTIVE_FLAG)))
         printf("    <button>\n"
                "        <halpin>\"%s\"</halpin>\n"
                "        <text>\"FAULT RESET\"</text>\n"
