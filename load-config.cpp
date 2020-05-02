@@ -84,7 +84,7 @@ int load_common_group(QSettings &ini, common_config_t &common)
     if ((common.atSpeedThreshold < 0) || (common.atSpeedThreshold > 1.0))
         goto fail_out_of_range;
     if (checkFlag)
-        printf("%s\t: %f\n", KEY_AT_SPEED_THRESHOLD, common.atSpeedThreshold);
+        printf("%s\t: %.2f\n", KEY_AT_SPEED_THRESHOLD, common.atSpeedThreshold);
 
     ini.endGroup();
     return 0;
@@ -107,7 +107,7 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
         printf("\n[%s]\n", qPrintable(GROUP_RS485));
 
     /* Slave address */
-    rs485.slaveAddress = ini.value(key = KEY_SLAVE_ADDRESS, VALUE_SLAVE_ADDRESS).toInt(&ok);
+    rs485.slaveAddress = ini.value(key = KEY_SLAVE_ADDRESS, "").toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
     if ((rs485.slaveAddress < 0) || (rs485.slaveAddress > 0xFF))
@@ -116,14 +116,14 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
         printf("%s\t\t: %d\n", KEY_SLAVE_ADDRESS, rs485.slaveAddress);
 
     /* Serial device path */
-    rs485.serialDevice = ini.value(key = KEY_SERIAL_DEVICE, VALUE_SERIAL_DEVICE).toString();
+    rs485.serialDevice = ini.value(key = KEY_SERIAL_DEVICE, "").toString();
     if (rs485.serialDevice.isEmpty())
         goto fail_invalid_parameter;
     if (checkFlag)
         printf("%s\t\t: %s\n", KEY_SERIAL_DEVICE, qPrintable(rs485.serialDevice));
 
     /* Baud rate */
-    rs485.baudRate = ini.value(key = KEY_BAUD_RATE, VALUE_BAUD_RATE).toInt(&ok);
+    rs485.baudRate = ini.value(key = KEY_BAUD_RATE, "").toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
     if (rs485.baudRate < 0)

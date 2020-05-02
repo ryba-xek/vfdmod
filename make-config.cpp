@@ -22,13 +22,19 @@ void make_blank_config()
     printf("\n");
 
     printf("[%s]\n", GROUP_CONTROL);
+    printf(";%s=%s\n", KEY_FUNCTION_CODE, "0x10");
+    printf(";%s=%s\n", KEY_RUN_COIL, "0x????");
+    printf(";%s=%s\n", KEY_DIRECTION_COIL, "0x????");
+    printf(";%s=%s\n", KEY_FAULT_RESET_COIL, "0x????");
     printf("%s=%s\n", KEY_ADDRESS, "0x????");
     printf("%s=%s\n", KEY_RUN_FWD, "0x????");
     printf("%s=%s\n", KEY_RUN_REV, "0x????");
+    printf(";%s=%s\n", KEY_FAULT_RESET, "0x????");
     printf("%s=%s\n", KEY_STOP, "0x????");
     printf("\n");
 
     printf("[%s]\n", GROUP_SPINDLE_IN);
+    printf(";%s=%s\n", KEY_FUNCTION_CODE, "0x10");
     printf("%s=%s\n", KEY_ADDRESS, "0x????");
     printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
     printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
@@ -108,16 +114,36 @@ void make_postgui_config(const main_config_t &mconfig, const QVector<user_config
            PYVCP,
            HAL_PIN_LAST_ERROR);
 
-    printf("\n"
-           "# Fault reset\n"
-           "net %s-%s %s.%s.%s <= %s.%s\n",
-           PYVCP,
-           HAL_PIN_FAULT_RESET,
-           qPrintable(mconfig.common.componentName),
-           HAL_GROUP_CONTROL,
-           HAL_PIN_FAULT_RESET,
-           PYVCP,
-           HAL_PIN_FAULT_RESET);
+    if ((((mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)
+            || (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_HOLDING_REGISTERS))
+            && (mconfig.control.faultResetValue != INACTIVE_FLAG))
+            || (((mconfig.control.functionCode == MODBUS_FUNC_WRITE_SINGLE_COIL)
+                 || (mconfig.control.functionCode == MODBUS_FUNC_WRITE_MULTIPLE_COILS))
+                 && (mconfig.control.faultResetCoil != INACTIVE_FLAG))) {
+
+        printf("\n"
+               "# Fault reset!\n"
+               "# Because of ordinary button click is too short, it's necessary\n"
+               "# to prolong fault reset output in active state for a while.\n"
+               "loadrt oneshot names=fault-reset-delay\n"
+               "addf fault-reset-delay servo-thread\n"
+               "# Two seconds delay should be enough.\n"
+               "setp fault-reset-delay.width 2\n");
+
+        printf("net %s-%s-short %s.%s => fault-reset-delay.in\n",
+               PYVCP,
+               HAL_PIN_FAULT_RESET,
+               PYVCP,
+               HAL_PIN_FAULT_RESET);
+
+        printf("net %s-%s-long fault-reset-delay.out => %s.%s.%s\n",
+               PYVCP,
+               HAL_PIN_FAULT_RESET,
+               qPrintable(mconfig.common.componentName),
+               HAL_GROUP_CONTROL,
+               HAL_PIN_FAULT_RESET);
+
+    }
 
     printf("\n"
            "# User parameters\n");
