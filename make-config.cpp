@@ -1,74 +1,90 @@
 #include <stdio.h>
 #include <QString>
 #include <QVector>
+#include <QFile>
 #include "default-values.h"
 #include "structures.h"
 
 void make_blank_config()
 {
-    printf("[%s]\n", GROUP_COMMON);
-    printf("%s=%s\n", KEY_MAX_SPEED_RPM, "????");
-    printf("%s=%s\n", KEY_MIN_SPEED_RPM, "????");
-    printf("%s=%s\n", KEY_AT_SPEED_THRESHOLD, VALUE_AT_SPEED_THRESHOLD);
-    printf("\n");
+    QFile ini(":/configs/blank-config.ini");
 
-    printf("[%s]\n", GROUP_RS485);
-    printf("%s=%s\n", KEY_SLAVE_ADDRESS, VALUE_SLAVE_ADDRESS);
-    printf("%s=%s\n", KEY_SERIAL_DEVICE, VALUE_SERIAL_DEVICE);
-    printf("%s=%s\n", KEY_BAUD_RATE, VALUE_BAUD_RATE);
-    printf("%s=%s\n", KEY_DATA_BITS, VALUE_DATA_BITS);
-    printf("%s=%s\n", KEY_PARITY, VALUE_PARITY);
-    printf("%s=%s\n", KEY_STOP_BITS, VALUE_STOP_BITS);
-    printf("\n");
+    if (!ini.exists())
+        return;
 
-    printf("[%s]\n", GROUP_CONTROL);
-    printf(";%s=%s\n", KEY_FUNCTION_CODE, "0x10");
-    printf(";%s=%s\n", KEY_RUN_COIL, "0x????");
-    printf(";%s=%s\n", KEY_DIRECTION_COIL, "0x????");
-    printf(";%s=%s\n", KEY_FAULT_RESET_COIL, "0x????");
-    printf("%s=%s\n", KEY_ADDRESS, "0x????");
-    printf("%s=%s\n", KEY_RUN_FWD, "0x????");
-    printf("%s=%s\n", KEY_RUN_REV, "0x????");
-    printf(";%s=%s\n", KEY_FAULT_RESET, "0x????");
-    printf("%s=%s\n", KEY_STOP, "0x????");
-    printf("\n");
+    if (!ini.open(QIODevice::ReadOnly | QIODevice::Text))
+        return;
 
-    printf("[%s]\n", GROUP_SPINDLE_IN);
-    printf(";%s=%s\n", KEY_FUNCTION_CODE, "0x10");
-    printf("%s=%s\n", KEY_ADDRESS, "0x????");
-    printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
-    printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
-    printf("\n");
+    while (!ini.atEnd()) {
+        QString line = ini.readLine();
+        printf(qPrintable(line));
+    }
 
-    printf("[%s]\n", GROUP_SPINDLE_OUT);
-    printf("%s=%s\n", KEY_ADDRESS, "0x????");
-    printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
-    printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
-    printf("\n");
+    ini.close();
 
-    printf("[%s]\n", "User parameter 1");
-    printf("%s=%s\n", KEY_ADDRESS, "0x????");
-    printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
-    printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
-    printf("%s=%s\n", KEY_PIN_TYPE, "float");
-    printf("%s=%s\n", KEY_PIN_NAME, "user-float-parameter");
-    printf("\n");
+//    printf("[%s]\n", GROUP_COMMON);
+//    printf("%s=%s\n", KEY_MAX_SPEED_RPM, "????");
+//    printf("%s=%s\n", KEY_MIN_SPEED_RPM, "????");
+//    printf("%s=%s\n", KEY_AT_SPEED_THRESHOLD, VALUE_AT_SPEED_THRESHOLD);
+//    printf("\n");
 
-    printf("[%s]\n", "User parameter 2");
-    printf("%s=%s\n", KEY_ADDRESS, "0x????");
-    printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
-    printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
-    printf("%s=%s\n", KEY_PIN_TYPE, "s32");
-    printf("%s=%s\n", KEY_PIN_NAME, "user-s32-parameter");
-    printf("\n");
+//    printf("[%s]\n", GROUP_RS485);
+//    printf("%s=%s\n", KEY_SLAVE_ADDRESS, VALUE_SLAVE_ADDRESS);
+//    printf("%s=%s\n", KEY_SERIAL_DEVICE, VALUE_SERIAL_DEVICE);
+//    printf("%s=%s\n", KEY_BAUD_RATE, VALUE_BAUD_RATE);
+//    printf("%s=%s\n", KEY_DATA_BITS, VALUE_DATA_BITS);
+//    printf("%s=%s\n", KEY_PARITY, VALUE_PARITY);
+//    printf("%s=%s\n", KEY_STOP_BITS, VALUE_STOP_BITS);
+//    printf("\n");
 
-    printf("[%s]\n", "User parameter 3");
-    printf("%s=%s\n", KEY_ADDRESS, "0x????");
-    printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
-    printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
-    printf("%s=%s\n", KEY_PIN_TYPE, "u32");
-    printf("%s=%s\n", KEY_PIN_NAME, "user-u32-parameter");
-    printf("\n");
+//    printf("[%s]\n", GROUP_CONTROL);
+//    printf(";%s=%s\n", KEY_FUNCTION_CODE, "0x10");
+//    printf(";%s=%s\n", KEY_RUN_COIL, "0x????");
+//    printf(";%s=%s\n", KEY_DIRECTION_COIL, "0x????");
+//    printf(";%s=%s\n", KEY_FAULT_RESET_COIL, "0x????");
+//    printf("%s=%s\n", KEY_ADDRESS, "0x????");
+//    printf("%s=%s\n", KEY_RUN_FWD, "0x????");
+//    printf("%s=%s\n", KEY_RUN_REV, "0x????");
+//    printf(";%s=%s\n", KEY_FAULT_RESET, "0x????");
+//    printf("%s=%s\n", KEY_STOP, "0x????");
+//    printf("\n");
+
+//    printf("[%s]\n", GROUP_SPINDLE_IN);
+//    printf(";%s=%s\n", KEY_FUNCTION_CODE, "0x10");
+//    printf("%s=%s\n", KEY_ADDRESS, "0x????");
+//    printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
+//    printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
+//    printf("\n");
+
+//    printf("[%s]\n", GROUP_SPINDLE_OUT);
+//    printf("%s=%s\n", KEY_ADDRESS, "0x????");
+//    printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
+//    printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
+//    printf("\n");
+
+//    printf("[%s]\n", "User parameter 1");
+//    printf("%s=%s\n", KEY_ADDRESS, "0x????");
+//    printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
+//    printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
+//    printf("%s=%s\n", KEY_PIN_TYPE, "float");
+//    printf("%s=%s\n", KEY_PIN_NAME, "user-float-parameter");
+//    printf("\n");
+
+//    printf("[%s]\n", "User parameter 2");
+//    printf("%s=%s\n", KEY_ADDRESS, "0x????");
+//    printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
+//    printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
+//    printf("%s=%s\n", KEY_PIN_TYPE, "s32");
+//    printf("%s=%s\n", KEY_PIN_NAME, "user-s32-parameter");
+//    printf("\n");
+
+//    printf("[%s]\n", "User parameter 3");
+//    printf("%s=%s\n", KEY_ADDRESS, "0x????");
+//    printf("%s=%s\n", KEY_MULTIPLIER, VALUE_MULTIPLIER);
+//    printf("%s=%s\n", KEY_DIVIDER, VALUE_DIVIDER);
+//    printf("%s=%s\n", KEY_PIN_TYPE, "u32");
+//    printf("%s=%s\n", KEY_PIN_NAME, "user-u32-parameter");
+//    printf("\n");
 }
 
 void make_postgui_config(const main_config_t &mconfig, const QVector<user_config_t> &uconfig)

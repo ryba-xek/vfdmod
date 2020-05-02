@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>configs/blank-config.ini</file>
+    </qresource>
+</RCC>

@@ -28,3 +28,8 @@ SOURCES += main.cpp \
 HEADERS += \
     default-values.h \
     structures.h
+
+OTHER_FILES +=
+
+RESOURCES += \
+    resources.qrc
