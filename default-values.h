@@ -51,6 +51,7 @@
 #define GROUP_SPINDLE_OUT           "SpindleRpmOut"
 
 /* User parameter group */
+#define KEY_BIT_MASK                "BitMask"
 #define KEY_PIN_TYPE                "PinType"
 #define KEY_PIN_NAME                "PinName"
 
@@ -84,6 +85,8 @@
 /* MODBUS */
 
 /* Function codes */
+#define MODBUS_FUNC_READ_MULTIPLE_COILS                 0x01
+#define MODBUS_FUNC_READ_MULTIPLE_HOLDING_REGISTERS     0x03
 #define MODBUS_FUNC_WRITE_SINGLE_COIL                   0x05
 #define MODBUS_FUNC_WRITE_MULTIPLE_COILS                0x0F
 #define MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER       0x06

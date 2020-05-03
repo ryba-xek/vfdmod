@@ -520,6 +520,22 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
     user_config_t usrcfg;
     usrcfg.groupName = group;
 
+    /* Function code */
+    value = ini.value(key = KEY_FUNCTION_CODE, QString("%1").arg(MODBUS_FUNC_READ_MULTIPLE_HOLDING_REGISTERS)).toString();
+    if (value.toLower().startsWith("0x"))
+        usrcfg.functionCode = hex_to_int(value, &ok);
+    else
+        usrcfg.functionCode = value.toInt(&ok);
+    if (!ok)
+        goto fail_invalid_parameter;
+
+    if ((usrcfg.functionCode != MODBUS_FUNC_READ_MULTIPLE_HOLDING_REGISTERS)
+            && (usrcfg.functionCode != MODBUS_FUNC_READ_MULTIPLE_COILS))
+        goto fail_out_of_range;
+
+    if (checkFlag)
+        printf("%s\t\t: 0x%02X (%d)\n", KEY_FUNCTION_CODE, usrcfg.functionCode, usrcfg.functionCode);
+
     /* Address */
     value = ini.value(key = KEY_ADDRESS, "").toString();
     if (value.toLower().startsWith("0x"))
@@ -533,40 +549,67 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
     if (checkFlag)
         printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, usrcfg.address, usrcfg.address);
 
-    /* Multiplier */
-    usrcfg.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if (usrcfg.multiplier <= 0)
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t\t: %d\n", KEY_MULTIPLIER, usrcfg.multiplier);
+    // Function code 0x03
+    if (usrcfg.functionCode == MODBUS_FUNC_READ_MULTIPLE_HOLDING_REGISTERS) {
 
-    /* Divider */
-    usrcfg.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
-    if (!ok)
-        goto fail_invalid_parameter;
-    if (usrcfg.divider <= 0)
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t\t\t: %d\n", KEY_DIVIDER, usrcfg.divider);
+        /* Pin type */
+        value = ini.value(key = KEY_PIN_TYPE, "").toString().toLower();
+        if (value.isEmpty())
+            goto fail_invalid_parameter;
+        if (value == "bit")
+            usrcfg.pinType = HAL_BIT;
+        if (value == "float")
+            usrcfg.pinType = HAL_FLOAT;
+        if (value == "s32")
+            usrcfg.pinType = HAL_S32;
+        if (value == "u32")
+            usrcfg.pinType = HAL_U32;
+        if ((value != "bit")
+                && (value != "float")
+                && (value != "s32")
+                && (value != "u32"))
+            goto fail_out_of_range;
+        if (checkFlag)
+            printf("%s\t\t\t: %s\n", KEY_PIN_TYPE, qPrintable(value));
 
-    /* Pin type */
-    value = ini.value(key = KEY_PIN_TYPE, "").toString().toLower();
-    if (value.isEmpty())
-        goto fail_invalid_parameter;
-    if (value == "float")
-        usrcfg.pinType = HAL_FLOAT;
-    if (value == "s32")
-        usrcfg.pinType = HAL_S32;
-    if (value == "u32")
-        usrcfg.pinType = HAL_U32;
-    if ((value != "float")
-            && (value != "s32")
-            && (value != "u32"))
-        goto fail_out_of_range;
-    if (checkFlag)
-        printf("%s\t\t\t: %s\n", KEY_PIN_TYPE, qPrintable(value));
+        if (usrcfg.pinType != HAL_BIT) {
+
+            /* Multiplier */
+            usrcfg.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);
+            if (!ok)
+                goto fail_invalid_parameter;
+            if (usrcfg.multiplier <= 0)
+                goto fail_out_of_range;
+            if (checkFlag)
+                printf("%s\t\t: %d\n", KEY_MULTIPLIER, usrcfg.multiplier);
+
+            /* Divider */
+            usrcfg.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
+            if (!ok)
+                goto fail_invalid_parameter;
+            if (usrcfg.divider <= 0)
+                goto fail_out_of_range;
+            if (checkFlag)
+                printf("%s\t\t\t: %d\n", KEY_DIVIDER, usrcfg.divider);
+
+        } else {
+
+            //BitMask
+            value = ini.value(key = KEY_BIT_MASK, "0xFFFF").toString();
+            if (value.toLower().startsWith("0x"))
+                usrcfg.bitMask = hex_to_int(value, &ok);
+            else
+                usrcfg.bitMask = value.toInt(&ok);
+            if (!ok)
+                goto fail_invalid_parameter;
+            if ((usrcfg.bitMask < 0) || (usrcfg.bitMask > 0xFFFF))
+                goto fail_out_of_range;
+            if (checkFlag)
+                printf("%s\t\t\t: 0x%04X (%d)\n", KEY_BIT_MASK, usrcfg.bitMask, usrcfg.bitMask);
+
+        }
+
+    }
 
     /* Pin name */
     usrcfg.pinName = ini.value(key = KEY_PIN_NAME, "").toString();

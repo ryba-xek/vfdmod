@@ -117,23 +117,57 @@ int read_modbus_data(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_
                    uconfig.at(i).address,
                    uconfig.at(i).address);
         protocol_delay(mconfig.rs485);
-        if (1 != modbus_read_registers(ctx, uconfig.at(i).address, 1, &value))
-            goto fail;
-        if (debugFlag)
-            printf("%s: returned value is %d (0x%04X)\n", qPrintable(exeName), value, value);
 
-        switch (uconfig.at(i).pinType) {
-        case HAL_FLOAT:
-            *hal_udata[i]->floatPin = double(value) * uconfig.at(i).multiplier / uconfig.at(i).divider;
-            break;
-        case HAL_S32:
-            *hal_udata[i]->s32Pin = value * uconfig.at(i).multiplier / uconfig.at(i).divider;
-            break;
-        case HAL_U32:
-            *hal_udata[i]->u32Pin = value * uconfig.at(i).multiplier / uconfig.at(i).divider;
-            break;
-        default:
-            fprintf(stderr, "%s: incorrect HAL pin type!\n", qPrintable(exeName));
+        if (uconfig.at(i).functionCode == MODBUS_FUNC_READ_MULTIPLE_COILS) {
+
+            uint8_t bit_value = 0;
+            if (1 != modbus_read_bits(ctx, uconfig.at(i).address, 1, &bit_value))
+                goto fail;
+            if (debugFlag)
+                printf("%s: returned value is %s\n",
+                       qPrintable(exeName),
+                       bit_value != 0 ? "TRUE" : "FALSE");
+
+            if (bit_value != 0) {
+                *hal_udata[i]->bitPin = 1;
+                *hal_udata[i]->bitNotPin = 0;
+            } else {
+                *hal_udata[i]->bitPin = 0;
+                *hal_udata[i]->bitNotPin = 1;
+            }
+
+        }
+
+        if (uconfig.at(i).functionCode == MODBUS_FUNC_READ_MULTIPLE_HOLDING_REGISTERS) {
+
+            if (1 != modbus_read_registers(ctx, uconfig.at(i).address, 1, &value))
+                goto fail;
+            if (debugFlag)
+                printf("%s: returned value is %d (0x%04X)\n", qPrintable(exeName), value, value);
+
+            switch (uconfig.at(i).pinType) {
+            case HAL_FLOAT:
+                *hal_udata[i]->floatPin = double(value) * uconfig.at(i).multiplier / uconfig.at(i).divider;
+                break;
+            case HAL_S32:
+                *hal_udata[i]->s32Pin = value * uconfig.at(i).multiplier / uconfig.at(i).divider;
+                break;
+            case HAL_U32:
+                *hal_udata[i]->u32Pin = value * uconfig.at(i).multiplier / uconfig.at(i).divider;
+                break;
+            case HAL_BIT:
+                if ((value && uconfig.at(i).bitMask) != 0) {
+                    *hal_udata[i]->bitPin = 1;
+                    *hal_udata[i]->bitNotPin = 0;
+                } else {
+                    *hal_udata[i]->bitPin = 0;
+                    *hal_udata[i]->bitNotPin = 1;
+                }
+                break;
+            default:
+                fprintf(stderr, "%s: incorrect HAL pin type!\n", qPrintable(exeName));
+            }
+
         }
 
         okCounter++;
@@ -489,43 +523,71 @@ int main(int argc, char *argv[])
     }
 
     for (int i = 0; i < uconfig.count(); ++i) {
-        switch (uconfig.at(i).pinType) {
-        case HAL_FLOAT:
-            if (0 == hal_pin_float_newf(HAL_OUT, &(hal_udata[i]->floatPin),
+
+        if ((uconfig.at(i).functionCode == MODBUS_FUNC_READ_MULTIPLE_COILS)
+                || (uconfig.at(i).pinType == HAL_BIT)) {
+
+            // Direct bit pin
+            if (0 == hal_pin_bit_newf(HAL_OUT, &(hal_udata[i]->bitPin),
                                         hal_comp_id,
                                         "%s.%s.%s",
                                         qPrintable(mconfig.common.componentName),
                                         HAL_GROUP_USER_PARAMETERS,
                                         qPrintable(uconfig.at(i).pinName)))
-                *hal_udata[i]->floatPin = 0;
+                *hal_udata[i]->bitPin = 0;
             else
                 goto fail;
-            break;
-        case HAL_S32:
-            if (0 == hal_pin_s32_newf(HAL_OUT, &(hal_udata[i]->s32Pin),
-                                      hal_comp_id,
-                                      "%s.%s.%s",
-                                      qPrintable(mconfig.common.componentName),
-                                      HAL_GROUP_USER_PARAMETERS,
-                                      qPrintable(uconfig.at(i).pinName)))
-                *hal_udata[i]->s32Pin = 0;
+
+            // Inverted bit pin
+            if (0 == hal_pin_bit_newf(HAL_OUT, &(hal_udata[i]->bitNotPin),
+                                        hal_comp_id,
+                                        "%s.%s.%s-not",
+                                        qPrintable(mconfig.common.componentName),
+                                        HAL_GROUP_USER_PARAMETERS,
+                                        qPrintable(uconfig.at(i).pinName)))
+                *hal_udata[i]->bitNotPin = 1;
             else
                 goto fail;
-            break;
-        case HAL_U32:
-            if (0 == hal_pin_u32_newf(HAL_OUT, &(hal_udata[i]->u32Pin),
-                                      hal_comp_id,
-                                      "%s.%s.%s",
-                                      qPrintable(mconfig.common.componentName),
-                                      HAL_GROUP_USER_PARAMETERS,
-                                      qPrintable(uconfig.at(i).pinName)))
-                *hal_udata[i]->u32Pin = 0;
-            else
-                goto fail;
-            break;
-        default:
-            fprintf(stderr, "%s: incorrect HAL pin type!\n", qPrintable(exeName));
-        }
+
+        } else
+
+            switch (uconfig.at(i).pinType) {
+            case HAL_FLOAT:
+                if (0 == hal_pin_float_newf(HAL_OUT, &(hal_udata[i]->floatPin),
+                                            hal_comp_id,
+                                            "%s.%s.%s",
+                                            qPrintable(mconfig.common.componentName),
+                                            HAL_GROUP_USER_PARAMETERS,
+                                            qPrintable(uconfig.at(i).pinName)))
+                    *hal_udata[i]->floatPin = 0;
+                else
+                    goto fail;
+                break;
+            case HAL_S32:
+                if (0 == hal_pin_s32_newf(HAL_OUT, &(hal_udata[i]->s32Pin),
+                                          hal_comp_id,
+                                          "%s.%s.%s",
+                                          qPrintable(mconfig.common.componentName),
+                                          HAL_GROUP_USER_PARAMETERS,
+                                          qPrintable(uconfig.at(i).pinName)))
+                    *hal_udata[i]->s32Pin = 0;
+                else
+                    goto fail;
+                break;
+            case HAL_U32:
+                if (0 == hal_pin_u32_newf(HAL_OUT, &(hal_udata[i]->u32Pin),
+                                          hal_comp_id,
+                                          "%s.%s.%s",
+                                          qPrintable(mconfig.common.componentName),
+                                          HAL_GROUP_USER_PARAMETERS,
+                                          qPrintable(uconfig.at(i).pinName)))
+                    *hal_udata[i]->u32Pin = 0;
+                else
+                    goto fail;
+                break;
+            default:
+                fprintf(stderr, "%s: incorrect HAL pin type!\n", qPrintable(exeName));
+            }
     }
 
     /* Modbus init */
@@ -606,6 +668,10 @@ int main(int argc, char *argv[])
                     break;
                 case HAL_U32:
                     *hal_udata[i]->u32Pin = 0;
+                    break;
+                case HAL_BIT:
+                    *hal_udata[i]->bitPin = 0;
+                    *hal_udata[i]->bitNotPin = 1;
                     break;
                 default:
                     fprintf(stderr, "%s: incorrect HAL pin type!\n", qPrintable(exeName));

@@ -79,9 +79,11 @@ typedef struct {
 /* User parameter structure */
 typedef struct {
     QString groupName;
+    int functionCode;
     int address;
     int multiplier;
     int divider;
+    int bitMask;
     hal_type_t pinType;
     QString pinName;
 } user_config_t;
@@ -109,6 +111,8 @@ typedef struct {
     hal_u32_t   *u32Pin;
     hal_s32_t   *s32Pin;
     hal_float_t *floatPin;
+    hal_bit_t   *bitPin;
+    hal_bit_t   *bitNotPin;
 } hal_user_data_t;
 
 #endif // STRUCTURES_H
