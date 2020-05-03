@@ -72,7 +72,8 @@ int load_common_group(QSettings &ini, common_config_t &common)
     common.minSpeedRpm = ini.value(key = KEY_MIN_SPEED_RPM, "").toInt(&ok);
     if (!ok)
         goto fail_invalid_parameter;
-    if (common.minSpeedRpm <= 0)
+    if ((common.minSpeedRpm <= 0)
+            || (common.minSpeedRpm >= common.maxSpeedRpm))
         goto fail_out_of_range;
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_MIN_SPEED_RPM, common.minSpeedRpm);
@@ -591,7 +592,7 @@ fail_out_of_range:
 void remove(QStringList &groups, const QString &group)
 {
     foreach(QString s, groups) {
-        if (s.toLower() == QString(group).toLower())
+        if (s.toLower() == group.toLower())
             groups.removeOne(s);
     }
 }
@@ -672,5 +673,6 @@ int load_config(const QString &inifile, main_config_t &mconfig, QVector<user_con
 
     if (checkFlag)
         printf("\n--- Config file is OK ---\n");
+
     return 0;
 }
