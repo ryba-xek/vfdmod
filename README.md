@@ -19,6 +19,11 @@ English: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-
 Russian: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
 
 # History
+Vfdmov 0.3.1:
+- Function codes 0x05 (write single coil) and 0x0F (write multiple coils) are supported.
+- PyVcp generator: fault reset button fixed.
+- Blank config file now includes all parameters and short description of each.
+
 Vfdmod 0.3.0:
 - Reconnection feature added, it's useful when serial device has been re-attached.
 - Fault reset added.
