@@ -54,6 +54,7 @@
 #define KEY_BIT_MASK                "BitMask"
 #define KEY_PIN_TYPE                "PinType"
 #define KEY_PIN_NAME                "PinName"
+#define VALUE_BIT_MASK              "0xFFFF"
 
 /* Common keys & values */
 #define KEY_FUNCTION_CODE           "FunctionCode"

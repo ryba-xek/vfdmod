@@ -140,10 +140,20 @@ void make_pyvcp_config(const QString &inifile, const main_config_t &mconfig, con
             printf("        <led halpin=\"%s\" size=\"12\" on_color=\"yellow\" off_color=\"blue\"/>\n",
                    qPrintable(uconfig.at(i).pinName));
         } else
-            if (uconfig.at(i).pinType == HAL_FLOAT)
+            switch (uconfig.at(i).pinType) {
+            case HAL_FLOAT:
                 printf("        <number halpin=\"%s\" format=\".1f\"/>\n", qPrintable(uconfig.at(i).pinName));
-            else
-                printf("        <number halpin=\"%s\"/>\n", qPrintable(uconfig.at(i).pinName));
+                break;
+            case HAL_S32:
+                printf("        <s32 halpin=\"%s\"/>\n", qPrintable(uconfig.at(i).pinName));
+                break;
+            case HAL_U32:
+                printf("        <u32 halpin=\"%s\"/>\n", qPrintable(uconfig.at(i).pinName));
+                break;
+            // This makes compiler happy!
+            default:
+                break;
+            }
     }
 
     printf("    <!-- User parameters end -->\n"

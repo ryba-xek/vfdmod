@@ -54,53 +54,64 @@ int load_common_group(QSettings &ini, common_config_t &common)
 
     /* Component name */
     common.componentName = ini.value(KEY_COMPONENT_NAME, exeName).toString();
+
     if (common.componentName.isEmpty())
         common.componentName = exeName;
+
     if(checkFlag)
         printf("%s\t\t: %s\n", KEY_COMPONENT_NAME, qPrintable(common.componentName));
 
     /* Max speed RPM */
     common.maxSpeedRpm = ini.value(key = KEY_MAX_SPEED_RPM, "").toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if (common.maxSpeedRpm <= 0)
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_MAX_SPEED_RPM, common.maxSpeedRpm);
 
     /* Min speed RPM */
     common.minSpeedRpm = ini.value(key = KEY_MIN_SPEED_RPM, "").toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if ((common.minSpeedRpm <= 0)
-            || (common.minSpeedRpm >= common.maxSpeedRpm))
+            || (common.minSpeedRpm > common.maxSpeedRpm))
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_MIN_SPEED_RPM, common.minSpeedRpm);
 
     /* At speed threshold */
     common.atSpeedThreshold = ini.value(key = KEY_AT_SPEED_THRESHOLD, VALUE_AT_SPEED_THRESHOLD).toDouble(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if ((common.atSpeedThreshold < 0) || (common.atSpeedThreshold > 1.0))
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t: %.2f\n", KEY_AT_SPEED_THRESHOLD, common.atSpeedThreshold);
 
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", GROUP_RS485, qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is wrong or missing!\n", GROUP_RS485, qPrintable(key));
     return -1;
 fail_out_of_range:
-    fprintf(stderr, "%s/%s: parameter is out of range!\n", GROUP_RS485, qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is out of range!\n", GROUP_RS485, qPrintable(key));
     return -1;
 }
 
 int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
 {
     bool ok;
-    QString key;
+    QString key, value;
     QStringList errors;
 
     ini.beginGroup(GROUP_RS485);
@@ -108,93 +119,126 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
         printf("\n[%s]\n", qPrintable(GROUP_RS485));
 
     /* Slave address */
-    rs485.slaveAddress = ini.value(key = KEY_SLAVE_ADDRESS, "").toInt(&ok);
+    value = ini.value(key = KEY_SLAVE_ADDRESS, "").toString();
+
+    if (value.toLower().startsWith("0x"))
+        rs485.slaveAddress = hex_to_int(value, &ok);
+    else
+        rs485.slaveAddress = value.toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if ((rs485.slaveAddress < 0) || (rs485.slaveAddress > 0xFF))
         goto fail_out_of_range;
+
     if (checkFlag)
-        printf("%s\t\t: %d\n", KEY_SLAVE_ADDRESS, rs485.slaveAddress);
+        printf("%s\t\t: 0x%02X (%d)\n", KEY_SLAVE_ADDRESS, rs485.slaveAddress, rs485.slaveAddress);
 
     /* Serial device path */
     rs485.serialDevice = ini.value(key = KEY_SERIAL_DEVICE, "").toString();
+
     if (rs485.serialDevice.isEmpty())
         goto fail_invalid_parameter;
+
     if (checkFlag)
         printf("%s\t\t: %s\n", KEY_SERIAL_DEVICE, qPrintable(rs485.serialDevice));
 
     /* Baud rate */
     rs485.baudRate = ini.value(key = KEY_BAUD_RATE, "").toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
-    if (rs485.baudRate < 0)
+
+    if (rs485.baudRate <= 0)
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_BAUD_RATE, rs485.baudRate);
 
     /* Data bits */
     rs485.dataBits = ini.value(key = KEY_DATA_BITS, VALUE_DATA_BITS).toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
-    if (rs485.dataBits < 0)
+
+    if (rs485.dataBits != 8)
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_DATA_BITS, rs485.dataBits);
 
     /* Parity */
-    rs485.parity = ini.value(key = KEY_PARITY, VALUE_PARITY).toString();
+    rs485.parity = ini.value(key = KEY_PARITY, VALUE_PARITY).toString().toUpper();
+
     if (rs485.parity.isEmpty())
         goto fail_invalid_parameter;
+
     if ((rs485.parity != "N")
             && (rs485.parity != "E")
             && (rs485.parity != "O"))
         goto fail_invalid_parameter;
+
     if (checkFlag)
         printf("%s\t\t\t: %s\n", KEY_PARITY, qPrintable(rs485.parity));
 
     /* Stop bits */
     rs485.stopBits = ini.value(key = KEY_STOP_BITS, VALUE_STOP_BITS).toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
-    if (rs485.stopBits < 0)
+
+    if ((rs485.stopBits != 1) && (rs485.stopBits != 2))
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_STOP_BITS, rs485.stopBits);
 
     /* Loop delay */
     rs485.loopDelay = ini.value(key = KEY_LOOP_DELAY, VALUE_LOOP_DELAY).toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if ((rs485.loopDelay < 0) || (rs485.loopDelay > 10000))
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_LOOP_DELAY, rs485.loopDelay);
 
     /* Protocol delay */
     rs485.protocolDelay = ini.value(key = KEY_PROTOCOL_DELAY, VALUE_PROTOCOL_DELAY).toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if ((rs485.protocolDelay < 0) || (rs485.protocolDelay > 100))
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_PROTOCOL_DELAY, rs485.protocolDelay);
 
     /* Is connected delay */
     rs485.isConnectedDelay = ini.value(key = KEY_IS_CONNECTED_DELAY, VALUE_IS_CONNECTED_DELAY).toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if ((rs485.isConnectedDelay < 1) || (rs485.isConnectedDelay > 100))
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t: %d\n", KEY_IS_CONNECTED_DELAY, rs485.isConnectedDelay);
 
     /* Connection errors */
     errors = ini.value(key = KEY_CONNECTION_ERROR_LIST, "").toStringList();
+
     foreach (QString error, errors) {
         if (error.isEmpty())
             continue;
 
         int e;
+
         if (error.toLower().startsWith("0x"))
             e = hex_to_int(error, &ok);
         else
@@ -202,8 +246,8 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
 
         if (!ok)
             goto fail_invalid_parameter;
-        else
-            rs485.criticalErrors.append(e);
+
+        rs485.criticalErrors.append(e);
     }
 
     if (checkFlag && !rs485.criticalErrors.isEmpty()) {
@@ -212,27 +256,29 @@ int load_rs485_group(QSettings &ini, rs485_config_t &rs485)
             if (i != rs485.criticalErrors.count() - 1)
                 printf("%d, ", rs485.criticalErrors.at(i));
             else
-                printf("%d ", rs485.criticalErrors.at(i));
+                printf("%d\n", rs485.criticalErrors.at(i));
         }
-        printf("\n");
     }
 
     /* Connection delay */
     rs485.connectionDelay = ini.value(key = KEY_CONNECTION_DELAY, VALUE_CONNECTION_DELAY).toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if ((rs485.connectionDelay < 0) || (rs485.connectionDelay > 10000))
         goto fail_out_of_range;
+
     if (checkFlag && !rs485.criticalErrors.isEmpty())
         printf("%s\t\t: %d\n", KEY_CONNECTION_DELAY, rs485.connectionDelay);
 
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", GROUP_RS485, qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is wrong or missing!\n", GROUP_RS485, qPrintable(key));
     return -1;
 fail_out_of_range:
-    fprintf(stderr, "%s/%s: parameter is out of range!\n", GROUP_RS485, qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is out of range!\n", GROUP_RS485, qPrintable(key));
     return -1;
 }
 
@@ -247,10 +293,12 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
 
     /* Function code */
     value = ini.value(key = KEY_FUNCTION_CODE, QString("%1").arg(MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)).toString();
+
     if (value.toLower().startsWith("0x"))
         control.functionCode = hex_to_int(value, &ok);
     else
         control.functionCode = value.toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
 
@@ -269,67 +317,87 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
 
         /* Address */
         value = ini.value(key = KEY_ADDRESS, "").toString();
+
         if (value.toLower().startsWith("0x"))
             control.address = hex_to_int(value, &ok);
         else
             control.address = value.toInt(&ok);
+
         if (!ok)
             goto fail_invalid_parameter;
+
         if ((control.address < 0) || (control.address > 0xFFFF))
             goto fail_out_of_range;
+
         if (checkFlag)
             printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, control.address, control.address);
 
         /* Run forward value */
         value = ini.value(key = KEY_RUN_FWD, "").toString();
+
         if (value.toLower().startsWith("0x"))
             control.runFwdValue = hex_to_int(value, &ok);
         else
             control.runFwdValue = value.toInt(&ok);
+
         if (!ok)
             goto fail_invalid_parameter;
+
         if ((control.runFwdValue < 0) || (control.runFwdValue > 0xFFFF))
             goto fail_out_of_range;
+
         if (checkFlag)
             printf("%s\t\t: 0x%04X (%d)\n", KEY_RUN_FWD, control.runFwdValue, control.runFwdValue);
 
         /* Run reverse value */
         value = ini.value(key = KEY_RUN_REV, "").toString();
+
         if (value.toLower().startsWith("0x"))
             control.runRevValue = hex_to_int(value, &ok);
         else
             control.runRevValue = value.toInt(&ok);
+
         if (!ok)
             goto fail_invalid_parameter;
+
         if ((control.runRevValue < 0) || (control.runRevValue > 0xFFFF))
             goto fail_out_of_range;
+
         if (checkFlag)
             printf("%s\t\t: 0x%04X (%d)\n", KEY_RUN_REV, control.runRevValue, control.runRevValue);
 
         /* Fault reset value */
         value = ini.value(key = KEY_FAULT_RESET, QString("%1").arg(INACTIVE_FLAG)).toString();
+
         if (value.toLower().startsWith("0x"))
             control.faultResetValue = hex_to_int(value, &ok);
         else
             control.faultResetValue = value.toInt(&ok);
+
         if (!ok)
             goto fail_invalid_parameter;
+
         if (((control.faultResetValue < 0) || (control.faultResetValue > 0xFFFF))
                 && (control.faultResetValue != INACTIVE_FLAG))
             goto fail_out_of_range;
+
         if ((checkFlag) && (control.faultResetValue != INACTIVE_FLAG))
             printf("%s\t\t: 0x%04X (%d)\n", KEY_FAULT_RESET, control.faultResetValue, control.faultResetValue);
 
         /* Stop value */
         value = ini.value(key = KEY_STOP, "").toString();
+
         if (value.toLower().startsWith("0x"))
             control.stopValue = hex_to_int(value, &ok);
         else
             control.stopValue = value.toInt(&ok);
+
         if (!ok)
             goto fail_invalid_parameter;
+
         if ((control.stopValue < 0) || (control.stopValue > 0xFFFF))
             goto fail_out_of_range;
+
         if (checkFlag)
             printf("%s\t\t: 0x%04X (%d)\n", KEY_STOP, control.stopValue, control.stopValue);
 
@@ -341,41 +409,53 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
 
         /* Run coil */
         value = ini.value(key = KEY_RUN_COIL, "").toString();
+
         if (value.toLower().startsWith("0x"))
             control.runCoil = hex_to_int(value, &ok);
         else
             control.runCoil = value.toInt(&ok);
+
         if (!ok)
             goto fail_invalid_parameter;
+
         if ((control.runCoil < 0) || (control.runCoil > 0xFFFF))
             goto fail_out_of_range;
+
         if (checkFlag)
             printf("%s\t\t\t: 0x%04X (%d)\n", KEY_RUN_COIL, control.runCoil, control.runCoil);
 
         /* Direction coil */
         value = ini.value(key = KEY_DIRECTION_COIL, "").toString();
+
         if (value.toLower().startsWith("0x"))
             control.directionCoil = hex_to_int(value, &ok);
         else
             control.directionCoil = value.toInt(&ok);
+
         if (!ok)
             goto fail_invalid_parameter;
+
         if ((control.directionCoil < 0) || (control.directionCoil > 0xFFFF))
             goto fail_out_of_range;
+
         if (checkFlag)
             printf("%s\t\t: 0x%04X (%d)\n", KEY_DIRECTION_COIL, control.directionCoil, control.directionCoil);
 
         /* Fault reset coil */
         value = ini.value(key = KEY_FAULT_RESET_COIL, QString("%1").arg(INACTIVE_FLAG)).toString();
+
         if (value.toLower().startsWith("0x"))
             control.faultResetCoil = hex_to_int(value, &ok);
         else
             control.faultResetCoil = value.toInt(&ok);
+
         if (!ok)
             goto fail_invalid_parameter;
+
         if (((control.faultResetCoil < 0) || (control.faultResetCoil > 0xFFFF))
                 && (control.faultResetCoil != INACTIVE_FLAG))
             goto fail_out_of_range;
+
         if ((checkFlag) && (control.faultResetCoil != INACTIVE_FLAG))
             printf("%s\t\t: 0x%04X (%d)\n", KEY_FAULT_RESET_COIL, control.faultResetCoil, control.faultResetCoil);
 
@@ -384,10 +464,10 @@ int load_ctrl_group(QSettings &ini, control_config_t &control)
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", GROUP_CONTROL, qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is wrong or missing!\n", GROUP_CONTROL, qPrintable(key));
     return -1;
 fail_out_of_range:
-    fprintf(stderr, "%s/%s: parameter is out of range!\n", GROUP_CONTROL, qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is out of range!\n", GROUP_CONTROL, qPrintable(key));
     return -1;
 }
 
@@ -402,10 +482,12 @@ int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
 
     /* Function code */
     value = ini.value(key = KEY_FUNCTION_CODE, QString("%1").arg(MODBUS_FUNC_WRITE_SINGLE_HOLDING_REGISTER)).toString();
+
     if (value.toLower().startsWith("0x"))
         spindle.functionCode = hex_to_int(value, &ok);
     else
         spindle.functionCode = value.toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
 
@@ -418,42 +500,52 @@ int load_rpm_in_group(QSettings &ini, spindle_in_config_t &spindle)
 
     /* Address */
     value = ini.value(key = KEY_ADDRESS, "").toString();
+
     if (value.toLower().startsWith("0x"))
         spindle.address = hex_to_int(value, &ok);
     else
         spindle.address = value.toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if ((spindle.address < 0) || (spindle.address > 0xFFFF))
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, spindle.address, spindle.address);
 
     /* Multiplier */
     spindle.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if (spindle.multiplier <= 0)
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_MULTIPLIER, spindle.multiplier);
 
     /* Divider */
     spindle.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if (spindle.divider <= 0)
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t\t: %d\n", KEY_DIVIDER, spindle.divider);
 
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", GROUP_SPINDLE_IN, qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is wrong or missing!\n", GROUP_SPINDLE_IN, qPrintable(key));
     return -1;
 fail_out_of_range:
-    fprintf(stderr, "%s/%s: parameter is out of range!\n", GROUP_SPINDLE_IN, qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is out of range!\n", GROUP_SPINDLE_IN, qPrintable(key));
     return -1;
 }
 
@@ -468,42 +560,52 @@ int load_rpm_out_group(QSettings &ini, spindle_out_config_t &spindle)
 
     /* Address */
     value = ini.value(key = KEY_ADDRESS, "").toString();
+
     if (value.toLower().startsWith("0x"))
         spindle.address = hex_to_int(value, &ok);
     else
         spindle.address = value.toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if ((spindle.address < 0) || (spindle.address > 0xFFFF))
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, spindle.address, spindle.address);
 
     /* Multiplier */
     spindle.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if (spindle.multiplier <= 0)
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t: %d\n", KEY_MULTIPLIER, spindle.multiplier);
 
     /* Divider */
     spindle.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if (spindle.divider <= 0)
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t\t: %d\n", KEY_DIVIDER, spindle.divider);
 
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", GROUP_SPINDLE_OUT, qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is wrong or missing!\n", GROUP_SPINDLE_OUT, qPrintable(key));
     return -1;
 fail_out_of_range:
-    fprintf(stderr, "%s/%s: parameter is out of range!\n", GROUP_SPINDLE_OUT, qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is out of range!\n", GROUP_SPINDLE_OUT, qPrintable(key));
     return -1;
 }
 
@@ -522,10 +624,12 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
 
     /* Function code */
     value = ini.value(key = KEY_FUNCTION_CODE, QString("%1").arg(MODBUS_FUNC_READ_MULTIPLE_HOLDING_REGISTERS)).toString();
+
     if (value.toLower().startsWith("0x"))
         usrcfg.functionCode = hex_to_int(value, &ok);
     else
         usrcfg.functionCode = value.toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
 
@@ -538,14 +642,18 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
 
     /* Address */
     value = ini.value(key = KEY_ADDRESS, "").toString();
+
     if (value.toLower().startsWith("0x"))
         usrcfg.address = hex_to_int(value, &ok);
     else
         usrcfg.address = value.toInt(&ok);
+
     if (!ok)
         goto fail_invalid_parameter;
+
     if ((usrcfg.address < 0) || (usrcfg.address > 0xFFFF))
         goto fail_out_of_range;
+
     if (checkFlag)
         printf("%s\t\t\t: 0x%04X (%d)\n", KEY_ADDRESS, usrcfg.address, usrcfg.address);
 
@@ -554,21 +662,24 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
 
         /* Pin type */
         value = ini.value(key = KEY_PIN_TYPE, "").toString().toLower();
+
         if (value.isEmpty())
             goto fail_invalid_parameter;
+
         if (value == "bit")
             usrcfg.pinType = HAL_BIT;
-        if (value == "float")
-            usrcfg.pinType = HAL_FLOAT;
-        if (value == "s32")
-            usrcfg.pinType = HAL_S32;
-        if (value == "u32")
-            usrcfg.pinType = HAL_U32;
-        if ((value != "bit")
-                && (value != "float")
-                && (value != "s32")
-                && (value != "u32"))
-            goto fail_out_of_range;
+        else
+            if (value == "float")
+                usrcfg.pinType = HAL_FLOAT;
+            else
+                if (value == "s32")
+                    usrcfg.pinType = HAL_S32;
+                else
+                    if (value == "u32")
+                        usrcfg.pinType = HAL_U32;
+                    else
+                        goto fail_out_of_range;
+
         if (checkFlag)
             printf("%s\t\t\t: %s\n", KEY_PIN_TYPE, qPrintable(value));
 
@@ -576,34 +687,44 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
 
             /* Multiplier */
             usrcfg.multiplier = ini.value(key = KEY_MULTIPLIER, VALUE_MULTIPLIER).toInt(&ok);
+
             if (!ok)
                 goto fail_invalid_parameter;
+
             if (usrcfg.multiplier <= 0)
                 goto fail_out_of_range;
+
             if (checkFlag)
                 printf("%s\t\t: %d\n", KEY_MULTIPLIER, usrcfg.multiplier);
 
             /* Divider */
             usrcfg.divider = ini.value(key = KEY_DIVIDER, VALUE_DIVIDER).toInt(&ok);
+
             if (!ok)
                 goto fail_invalid_parameter;
+
             if (usrcfg.divider <= 0)
                 goto fail_out_of_range;
+
             if (checkFlag)
                 printf("%s\t\t\t: %d\n", KEY_DIVIDER, usrcfg.divider);
 
         } else {
 
             //BitMask
-            value = ini.value(key = KEY_BIT_MASK, "0xFFFF").toString();
+            value = ini.value(key = KEY_BIT_MASK, VALUE_BIT_MASK).toString();
+
             if (value.toLower().startsWith("0x"))
                 usrcfg.bitMask = hex_to_int(value, &ok);
             else
                 usrcfg.bitMask = value.toInt(&ok);
+
             if (!ok)
                 goto fail_invalid_parameter;
+
             if ((usrcfg.bitMask < 0) || (usrcfg.bitMask > 0xFFFF))
                 goto fail_out_of_range;
+
             if (checkFlag)
                 printf("%s\t\t\t: 0x%04X (%d)\n", KEY_BIT_MASK, usrcfg.bitMask, usrcfg.bitMask);
 
@@ -613,8 +734,10 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
 
     /* Pin name */
     usrcfg.pinName = ini.value(key = KEY_PIN_NAME, "").toString();
+
     if (usrcfg.pinName.isEmpty())
         goto fail_invalid_parameter;
+
     if (checkFlag)
         printf("%s\t\t\t: %s\n", KEY_PIN_NAME, qPrintable(usrcfg.pinName));
 
@@ -624,10 +747,10 @@ int load_user_group(QSettings &ini, const QString &group, QVector<user_config_t>
     ini.endGroup();
     return 0;
 fail_invalid_parameter:
-    fprintf(stderr, "%s/%s: parameter is wrong or missing!\n", qPrintable(group), qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is wrong or missing!\n", qPrintable(group), qPrintable(key));
     return -1;
 fail_out_of_range:
-    fprintf(stderr, "%s/%s: parameter is out of range!\n", qPrintable(group), qPrintable(key));
+    fprintf(stderr, "[%s]:%s - parameter is out of range!\n", qPrintable(group), qPrintable(key));
     return -1;
 }
 
