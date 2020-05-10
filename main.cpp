@@ -99,11 +99,15 @@ int read_modbus_data(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_
                HAL_PIN_RPM_OUT,
                mconfig.rpmOut.address,
                mconfig.rpmOut.address);
+
     protocol_delay(mconfig.rs485);
+
     if (1 != modbus_read_registers(ctx, mconfig.rpmOut.address, 1, &value))
         goto fail;
+
     if (debugFlag)
         printf("%s: returned value is %d (0x%04X)\n", qPrintable(exeName), value, value);
+
     okCounter++;
     *hal_mdata->spindleRpmOut = double(value) * mconfig.rpmOut.multiplier / mconfig.rpmOut.divider;
 
@@ -116,6 +120,7 @@ int read_modbus_data(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_
                    qPrintable(uconfig.at(i).pinName),
                    uconfig.at(i).address,
                    uconfig.at(i).address);
+
         protocol_delay(mconfig.rs485);
 
         if (uconfig.at(i).functionCode == MODBUS_FUNC_READ_MULTIPLE_COILS) {
@@ -123,6 +128,7 @@ int read_modbus_data(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_
             uint8_t bit_value = 0;
             if (1 != modbus_read_bits(ctx, uconfig.at(i).address, 1, &bit_value))
                 goto fail;
+
             if (debugFlag)
                 printf("%s: returned value is %s\n",
                        qPrintable(exeName),
@@ -142,6 +148,7 @@ int read_modbus_data(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_
 
             if (1 != modbus_read_registers(ctx, uconfig.at(i).address, 1, &value))
                 goto fail;
+
             if (debugFlag)
                 printf("%s: returned value is %d (0x%04X)\n", qPrintable(exeName), value, value);
 
@@ -349,13 +356,13 @@ int main(int argc, char *argv[])
 
     checkFlag = 0;
     debugFlag = 0;
-    exitFlag = 0;
+    exitFlag  = 0;
     okCounter = 0;
-    serialDeviceIsOpened = 0;
+    serialDeviceIsOpened =  0;
 
     int newFlag = 0;
-    int postguiFlag = 0;
     int pyvcpFlag = 0;
+    int postguiFlag = 0;
     exeName = QFileInfo(argv[0]).fileName();
 
     int arg;
@@ -505,14 +512,14 @@ int main(int argc, char *argv[])
                               HAL_PIN_RUN_REVERSE))
         goto fail;
 
-    *hal_mdata->isConnected = 0;
-    *hal_mdata->errorCount = 0;
-    *hal_mdata->lastError = 0;
-    *hal_mdata->spindleRpmIn = 0;
+    *hal_mdata->isConnected   = 0;
+    *hal_mdata->errorCount    = 0;
+    *hal_mdata->lastError     = 0;
+    *hal_mdata->spindleRpmIn  = 0;
     *hal_mdata->spindleRpmOut = 0;
-    *hal_mdata->atSpeed = 0;
-    *hal_mdata->runForward = 0;
-    *hal_mdata->runReverse = 0;
+    *hal_mdata->atSpeed       = 0;
+    *hal_mdata->runForward    = 0;
+    *hal_mdata->runReverse    = 0;
 
     /* HAL memory allocation for user parameters */
     hal_udata = new hal_user_data_t*[uconfig.count()];
