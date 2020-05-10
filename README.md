@@ -19,7 +19,12 @@ English: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-
 Russian: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
 
 # History
-Vfdmov 0.3.1:
+Vfdmod 0.3.2:
+- User defined HAL pins may be boolean (bit type):
+  - Function code 0x01 (read coils) supported.
+  - Function code 0x03 (read holding registers, used by default) may be used to get any single bit within returned 16-bit data.
+
+Vfdmod 0.3.1:
 - Function codes 0x05 (write single coil) and 0x0F (write multiple coils) are supported.
 - PyVcp generator: fault reset button fixed.
 - Blank config file now includes all parameters and short description of each.
