@@ -1,25 +1,29 @@
 # About
-Vfdmod is a LinuxCNC userspace component designed to control any VFD what supports MODBUS RTU protocol.
+Vfdmod is a LinuxCNC userspace component designed to control any VFD what supports standard MODBUS RTU protocol.
 
 # Features
-- All settings are stored in a single plain text INI-file. This file describes communication settings, spindle limits, VFD's control registers to run spindle cw/ccw, any count of user defined parameters such as output current, frequency, temperature, etc.
-- Vfdmod has additional HAL pins to track RS485 communication status: is VFD connected (or not), total count of communication errors and last error code.
-- Built-in PyVcp generator to make a simple control panel, what can be attached to Axis main window.
+- Setting command speed with MODBUS function codes 0x06 and 0x10.
+- Setting control word with MODBUS function codes 0x05, 0x06, 0x0F and 0x10.
+- Reading any count of user defined parameters with MODBUS function codes 0x01 and 0x03.
+- User defined parameters of four types are supported: bit, float, s32 and u32.
+- Built-in PyVcp generator.
+- RS485 bus monitoring including total error count and last error code.
+- Auto reconnection attempts when USB-to-RS485 adapter was physically re-plugged.
 
 # Screenshots
 
 ![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-axis.png) ![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-hal.png)
 
 # Documentation
-See Vfdmod wiki: [https://github.com/aekhv/vfdmod/wiki](https://github.com/aekhv/vfdmod/wiki)
+See vfdmod wiki: [https://github.com/aekhv/vfdmod/wiki](https://github.com/aekhv/vfdmod/wiki)
 
 # Download DEB
 Latest Debian build: [https://github.com/aekhv/vfdmod/releases](https://github.com/aekhv/vfdmod/releases)
 
 # Support
-LinuxCNC.org english forum: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
+In english: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
 
-CNC-Club.ru russian forum: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
+In russian: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
 
 # History
 Vfdmod 0.3.2:
