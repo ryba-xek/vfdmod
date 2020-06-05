@@ -10,13 +10,16 @@ Vfdmod is a LinuxCNC userspace component designed to control any VFD what suppor
 
 ![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-axis.png) ![](https://raw.githubusercontent.com/aekhv/vfdmod/master/images/hc1-cplus-hal.png)
 
-# Download \*.deb
-Latest build for Debian Wheezy & Stretch: [https://drive.google.com/drive/folders/1h3QomeaVBhC2EMr2kg6_Duv5fGrwGm8s](https://drive.google.com/drive/folders/1h3QomeaVBhC2EMr2kg6_Duv5fGrwGm8s)
+# Documentation
+See Vfdmod wiki: [https://github.com/aekhv/vfdmod/wiki](https://github.com/aekhv/vfdmod/wiki)
 
-# Usage & support
-English: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
+# Download DEB
+Latest Debian build: [https://github.com/aekhv/vfdmod/releases](https://github.com/aekhv/vfdmod/releases)
 
-Russian: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
+# Support
+LinuxCNC.org english forum: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
+
+CNC-Club.ru russian forum: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
 
 # History
 Vfdmod 0.3.2:
