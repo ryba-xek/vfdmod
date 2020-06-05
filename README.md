@@ -2,12 +2,12 @@
 Vfdmod is a LinuxCNC userspace component designed to control any VFD that supports standard MODBUS RTU protocol.
 
 # Features
-- Setting command speed with MODBUS function codes 0x06 and 0x10.
-- Setting control word with MODBUS function codes 0x05, 0x06, 0x0F and 0x10.
+- Setting command speed with MODBUS function codes 0x06 (write holding register) and 0x10 (write multiple holding registers).
+- Setting control word with MODBUS function codes 0x06, 0x10, 0x05 (write coil) and 0x0F (write multiple coils).
 - Reading any count of user defined parameters with MODBUS function codes 0x01 and 0x03.
-- User defined parameters of four types are supported: bit, float, s32 and u32.
+- Four types of user defined parameters are supported: bit, float, s32 and u32.
 - Built-in PyVcp generator.
-- RS485 bus monitoring including total error count and last error code.
+- RS485 connection state monitoring including total error count and last error code.
 - Auto reconnection attempts when USB-to-RS485 adapter was physically re-plugged.
 - *Huanyang VFDs are not supported because they use non-standard MODBUS function codes.*
 
