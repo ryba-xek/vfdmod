@@ -9,7 +9,7 @@ Vfdmod is a LinuxCNC userspace component designed to control any VFD that suppor
 - Built-in PyVcp generator.
 - RS485 bus monitoring including total error count and last error code.
 - Auto reconnection attempts when USB-to-RS485 adapter was physically re-plugged.
-- **Huanyang VFD's are not supported because of using non-standard MODBUS function codes.**
+- *Huanyang VFD's are not supported because of using non-standard MODBUS function codes.*
 
 # Screenshots
 
