@@ -1,5 +1,5 @@
 # About
-Vfdmod is a LinuxCNC userspace component designed to control any VFD that supports standard MODBUS RTU protocol.
+Vfdmod is a LinuxCNC user space component designed to control any VFD that supports standard MODBUS RTU protocol.
 
 # Features
 - Setting command speed with MODBUS function codes 0x06 (write holding register) and 0x10 (write multiple holding registers).
@@ -18,13 +18,12 @@ Vfdmod is a LinuxCNC userspace component designed to control any VFD that suppor
 # Documentation
 See vfdmod wiki: [https://github.com/aekhv/vfdmod/wiki](https://github.com/aekhv/vfdmod/wiki)
 
-# Download DEB
-Latest Debian build: [https://github.com/aekhv/vfdmod/releases](https://github.com/aekhv/vfdmod/releases)
+# Downloads
+Latest DEB-packages: [https://github.com/aekhv/vfdmod/releases](https://github.com/aekhv/vfdmod/releases)
 
 # Support
-In english: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
-
-In russian: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
+English support forum: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
+Russian support forum: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
 
 # History
 Vfdmod 0.3.2:
