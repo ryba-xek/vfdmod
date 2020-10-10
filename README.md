@@ -23,6 +23,7 @@ Latest DEB-packages: [https://github.com/aekhv/vfdmod/releases](https://github.c
 
 # Support
 English support forum: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
+
 Russian support forum: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
 
 # History
