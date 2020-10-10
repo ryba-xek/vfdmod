@@ -22,9 +22,9 @@ See vfdmod wiki: [https://github.com/aekhv/vfdmod/wiki](https://github.com/aekhv
 Latest DEB-packages: [https://github.com/aekhv/vfdmod/releases](https://github.com/aekhv/vfdmod/releases)
 
 # Support
-English support forum: [https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
+English support forum: [https://forum.linuxcnc.org/](https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu)
 
-Russian support forum: [http://www.cnc-club.ru/forum/viewtopic.php?p=557679](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
+Russian support forum: [http://www.cnc-club.ru/](http://www.cnc-club.ru/forum/viewtopic.php?p=557679)
 
 # History
 Vfdmod 0.3.2:
