@@ -163,7 +163,7 @@ int read_modbus_data(modbus_t *ctx, main_config_t &mconfig, QVector<user_config_
                 *hal_udata[i]->u32Pin = value * uconfig.at(i).multiplier / uconfig.at(i).divider;
                 break;
             case HAL_BIT:
-                if ((value && uconfig.at(i).bitMask) != 0) {
+                if ((value & uconfig.at(i).bitMask) != 0) {
                     *hal_udata[i]->bitPin = 1;
                     *hal_udata[i]->bitNotPin = 0;
                 } else {
