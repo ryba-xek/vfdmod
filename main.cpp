@@ -205,6 +205,11 @@ int write_modbus_data(modbus_t *ctx, main_config_t &mconfig)
     speed = speed * mconfig.rpmIn.multiplier / mconfig.rpmIn.divider;
 
     value = int(speed);
+    
+    // reverse rotation - negative speed value
+    if (0 != *hal_mdata->runReverse)
+        value = -value;
+
     if (debugFlag)
         printf("\n%s: setting command speed value to %d (0x%04X)...\n", qPrintable(exeName), value, value);
 
